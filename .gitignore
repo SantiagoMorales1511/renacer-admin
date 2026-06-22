@@ -8,6 +8,11 @@ build/
 .DS_Store
 coverage/
 .vite/
+*.tsbuildinfo
+
+# Artefactos compilados de la config de Vite (la fuente es vite.config.ts)
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Datos sensibles / importación local
 renacer_import_desglosado/

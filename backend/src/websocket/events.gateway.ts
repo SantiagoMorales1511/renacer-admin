@@ -4,13 +4,18 @@ import {
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { getCorsOrigins } from '../common/env';
 
 export type RealtimeEvent =
   | 'payment_created'
+  | 'payment_updated'
+  | 'payment_deleted'
   | 'attendance_updated'
   | 'student_created'
   | 'group_created'
   | 'expense_created'
+  | 'expense_updated'
+  | 'expense_deleted'
   | 'session_updated'
   | 'program_created'
   | 'event_created'
@@ -18,7 +23,7 @@ export type RealtimeEvent =
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
+    origin: getCorsOrigins(),
     credentials: true,
   },
 })

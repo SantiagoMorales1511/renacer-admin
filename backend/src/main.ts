@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { getCorsOrigins } from './common/env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
+    origin: getCorsOrigins(),
     credentials: true,
   });
 
@@ -20,9 +21,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-  await app.listen(port);
-  console.log(`Renacer Admin API en http://localhost:${port}/api`);
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Renacer Admin API escuchando en el puerto ${port} (prefijo /api)`);
 }
 
 bootstrap();
