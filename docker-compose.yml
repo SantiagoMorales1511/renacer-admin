@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: renacer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: renacer
+      POSTGRES_PASSWORD: renacer
+      POSTGRES_DB: renacer
+    ports:
+      - "5433:5432"
+    volumes:
+      - renacer_pgdata:/var/lib/postgresql/data
+
+volumes:
+  renacer_pgdata:

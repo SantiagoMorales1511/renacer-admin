@@ -1,0 +1,292 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ASSISTANT
+}
+
+enum GroupStatus {
+  ACTIVE
+  PAUSED
+  FINISHED
+}
+
+enum StudentStatus {
+  ACTIVE
+  PAUSED
+  WITHDRAWN
+  FINISHED
+}
+
+enum ModuleStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SessionStatus {
+  SCHEDULED
+  DONE
+  CANCELLED
+}
+
+enum ProgramType {
+  TRAINING_CONSTELLATIONS
+  BIODECODING_CERTIFICATION
+  ONE_DAY_CONSTELLATION_EVENT
+}
+
+enum ProgramStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OneDayEventStatus {
+  SCHEDULED
+  DONE
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  NEQUI
+  DAVIPLATA
+  OTRO
+}
+
+enum ExpenseCategory {
+  SALON
+  ASISTENTE
+  PUBLICIDAD
+  MATERIALES
+  TRANSPORTE
+  REFRIGERIOS
+  OFICINA
+  OTRO
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                Role     @default(ASSISTANT)
+  canRegisterExpenses Boolean  @default(false)
+  canViewOtherDays    Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  payments    Payment[]
+  expenses    Expense[]
+  attendances Attendance[]
+  auditLogs   AuditLog[]
+}
+
+model Program {
+  id          String        @id @default(uuid())
+  name        String
+  type        ProgramType
+  description String?
+  status      ProgramStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  groups          Group[]
+  moduleTemplates ProgramModuleTemplate[]
+  groupModules    GroupModule[]
+  events          OneDayEvent[]
+}
+
+model Group {
+  id        String      @id @default(uuid())
+  programId String
+  name      String
+  cohort    String?
+  startDate DateTime?
+  status    GroupStatus @default(ACTIVE)
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  program  Program        @relation(fields: [programId], references: [id])
+  students Student[]
+  modules  GroupModule[]
+  sessions ClassSession[]
+  payments Payment[]
+  expenses Expense[]
+}
+
+model Student {
+  id         String        @id @default(uuid())
+  fullName   String
+  phone      String?
+  email      String?
+  document   String?
+  groupId    String?
+  status     StudentStatus @default(ACTIVE)
+  enrolledAt DateTime      @default(now())
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  group       Group?       @relation(fields: [groupId], references: [id])
+  payments    Payment[]
+  attendances Attendance[]
+}
+
+model ProgramModuleTemplate {
+  id           String       @id @default(uuid())
+  programId    String
+  moduleNumber Int
+  name         String
+  defaultPrice Float        @default(0)
+  status       ModuleStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, moduleNumber])
+}
+
+model GroupModule {
+  id           String       @id @default(uuid())
+  groupId      String
+  programId    String
+  name         String
+  moduleNumber Int
+  price        Float        @default(0)
+  date         DateTime?
+  description  String?
+  status       ModuleStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  group    Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  program  Program        @relation(fields: [programId], references: [id])
+  sessions ClassSession[]
+  payments Payment[]
+
+  @@unique([groupId, moduleNumber])
+}
+
+model ClassSession {
+  id            String        @id @default(uuid())
+  groupId       String?
+  groupModuleId String?
+  oneDayEventId String?
+  title         String?
+  date          DateTime
+  startTime     String?
+  endTime       String?
+  place         String?
+  status        SessionStatus @default(SCHEDULED)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  group       Group?        @relation(fields: [groupId], references: [id])
+  groupModule GroupModule?  @relation(fields: [groupModuleId], references: [id])
+  oneDayEvent OneDayEvent?  @relation(fields: [oneDayEventId], references: [id], onDelete: SetNull)
+  attendances Attendance[]
+  payments    Payment[]
+}
+
+model Attendance {
+  id             String           @id @default(uuid())
+  sessionId      String
+  studentId      String
+  status         AttendanceStatus @default(PRESENT)
+  observation    String?
+  registeredById String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  registeredBy User?        @relation(fields: [registeredById], references: [id])
+
+  @@unique([sessionId, studentId])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  studentId      String?
+  groupId        String?
+  groupModuleId  String?
+  sessionId      String?
+  oneDayEventId  String?
+  concept        String?
+  amount         Float
+  method         PaymentMethod
+  paidAt         DateTime      @default(now())
+  observation    String?
+  receiptUrl     String?
+  registeredById String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  student      Student?      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group        Group?        @relation(fields: [groupId], references: [id])
+  groupModule  GroupModule?  @relation(fields: [groupModuleId], references: [id])
+  session      ClassSession? @relation(fields: [sessionId], references: [id])
+  oneDayEvent  OneDayEvent?  @relation(fields: [oneDayEventId], references: [id], onDelete: SetNull)
+  registeredBy User?         @relation(fields: [registeredById], references: [id])
+}
+
+model Expense {
+  id             String          @id @default(uuid())
+  date           DateTime        @default(now())
+  category       ExpenseCategory
+  description    String
+  amount         Float
+  groupId        String?
+  sessionId      String?
+  registeredById String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  group        Group? @relation(fields: [groupId], references: [id])
+  registeredBy User?  @relation(fields: [registeredById], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model OneDayEvent {
+  id                String            @id @default(uuid())
+  programId         String
+  title             String
+  date              DateTime
+  attendeesCount    Int               @default(0)
+  constellatedCount Int               @default(0)
+  observations      String?
+  status            OneDayEventStatus @default(SCHEDULED)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  program  Program        @relation(fields: [programId], references: [id])
+  payments Payment[]
+  sessions ClassSession[]
+}

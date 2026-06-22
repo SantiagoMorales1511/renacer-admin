@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+.vite/
+
+# Datos sensibles / importación local
+renacer_import_desglosado/
+backend/prisma/_historico_load-renacer-once.ts
