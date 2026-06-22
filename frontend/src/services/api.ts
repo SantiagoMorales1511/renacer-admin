@@ -1,7 +1,13 @@
 import axios from 'axios';
 
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3001';
+const stripTrailingSlash = (url: string) => url.replace(/\/+$/, '');
+
+export const API_URL = stripTrailingSlash(
+  import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api',
+);
+export const SOCKET_URL = stripTrailingSlash(
+  import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3001',
+);
 
 const TOKEN_KEY = 'renacer_token';
 
