@@ -1,9 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 import { AppModule } from './app.module';
 import { getCorsOrigins } from './common/env';
+import { syncUsers } from './bootstrap/sync-users';
 
 async function bootstrap() {
+  const prisma = new PrismaClient();
+  try {
+    await syncUsers(prisma);
+  } finally {
+    await prisma.$disconnect();
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({

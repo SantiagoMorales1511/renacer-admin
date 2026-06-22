@@ -35,7 +35,7 @@ Variables de entorno:
 - `JWT_SECRET` = secreto largo y aleatorio (ej: `openssl rand -hex 32`). Obligatorio en producción.
 - `JWT_EXPIRES_IN` = `7d` (opcional)
 - `CORS_ORIGIN` = URL del frontend en Vercel (ej: `https://renacer-admin.vercel.app`). Acepta varias separadas por coma.
-- `SEED_ADMIN_PASSWORD` y `SEED_ASSISTANT_PASSWORD` = solo si vas a correr el seed.
+- `SEED_ADMIN_PASSWORD` y `SEED_ASSISTANT_PASSWORD` = contraseñas reales de los usuarios iniciales. **Obligatorias en Railway**: al arrancar el backend se crean o actualizan `renacer` (admin) y `clarena` (assistant) en PostgreSQL.
 
 No definas `PORT`: Railway lo inyecta y el backend lo lee de `process.env.PORT`.
 
@@ -67,4 +67,4 @@ Comandos:
 2. Crear el servicio backend en Railway (root `backend`), pegar variables, usar `npm run start:migrate` como start command. Tomar su URL pública.
 3. Crear el proyecto frontend en Vercel (root `frontend`), pegar `VITE_API_URL` y `VITE_SOCKET_URL` con la URL del backend.
 4. Poner la URL de Vercel en `CORS_ORIGIN` del backend y redeploy.
-5. (Opcional) Correr `npm run seed` en el backend para crear los usuarios iniciales.
+5. Redeploy del backend. En cada arranque se sincronizan los usuarios en PostgreSQL (no hace falta correr el seed a mano si `SEED_*` están definidas).
