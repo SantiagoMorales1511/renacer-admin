@@ -96,7 +96,7 @@ export function CalendarMonthGrid({
                   {format(day, 'd')}
                 </span>
                 {dayItems.length > 0 && inMonth && (
-                  <span className="hidden rounded-full bg-petrol-100 px-1.5 py-0.5 text-[10px] font-semibold text-petrol-700 dark:bg-petrol-900/50 dark:text-petrol-200 sm:inline">
+                  <span className="hidden rounded-full bg-petrol-100 px-1.5 py-0.5 text-[10px] font-semibold text-petrol-700 dark:bg-petrol-500/20 dark:text-petrol-300 sm:inline">
                     {dayItems.length}
                   </span>
                 )}

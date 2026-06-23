@@ -77,7 +77,7 @@ function TabButton({
       className={clsx(
         '-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition-colors',
         active
-          ? 'border-petrol-600 text-petrol-700 dark:border-petrol-300 dark:text-petrol-200'
+          ? 'border-petrol-600 text-petrol-700 dark:border-petrol-400 dark:text-petrol-300'
           : 'border-transparent text-muted hover:text-ink',
       )}
     >

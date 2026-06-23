@@ -37,7 +37,7 @@ export function CashFlowPage() {
         <StatTile label="Ingresos" value={money(data.income)} accent="green" />
         <StatTile label="Gastos" value={money(data.expenses)} accent="red" />
         <StatTile label="Utilidad" value={money(data.profit)} accent="gold" />
-        <StatTile label="Pagos pendientes" value={money(data.pending)} accent="lavender" />
+        <StatTile label="Pagos pendientes" value={money(data.pending)} accent="sky" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

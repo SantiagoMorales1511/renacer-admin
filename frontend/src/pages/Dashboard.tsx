@@ -25,7 +25,7 @@ export function DashboardPage() {
         <StatTile label="Ingresos del mes" value={money(data.incomeMonth)} accent="petrol" />
         <StatTile label="Gastos del mes" value={money(data.expensesMonth)} accent="red" />
         <StatTile label="Utilidad estimada" value={money(data.estimatedProfit)} accent="gold" />
-        <StatTile label="Estudiantes activos" value={data.activeStudents} accent="lavender" />
+        <StatTile label="Estudiantes activos" value={data.activeStudents} accent="sky" />
         <Link to="/cartera">
           <StatTile
             label="Pagos pendientes"

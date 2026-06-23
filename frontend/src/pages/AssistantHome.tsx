@@ -24,7 +24,7 @@ export function AssistantHomePage() {
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label="Ingresos de hoy" value={money(data.incomeToday)} accent="green" />
         <StatTile label="Pagos de hoy" value={data.paymentsToday.length} accent="petrol" />
-        <StatTile label="Clases de hoy" value={data.todaySessions.length} accent="lavender" />
+        <StatTile label="Clases de hoy" value={data.todaySessions.length} accent="sky" />
         <StatTile label="Estudiantes activos" value={data.activeStudents} accent="gold" />
       </div>
 

@@ -35,12 +35,12 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-petrol-700 dark:text-petrol-200">
+          <h1 className="text-2xl font-semibold tracking-tight text-petrol-700 dark:text-petrol-300">
             Renacer
           </h1>
           <p className="mt-1 text-sm text-muted">Panel administrativo privado</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-panel bg-surface p-6 shadow-elevated">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-panel bg-surface p-6 shadow-elevated dark:shadow-elevated-dark">
           <Field label="Usuario">
             <Input
               type="text"

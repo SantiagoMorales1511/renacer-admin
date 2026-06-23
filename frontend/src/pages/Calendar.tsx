@@ -289,7 +289,7 @@ export function CalendarPage() {
 
         <div className="card hidden flex-col p-0 lg:flex">
           <div className="flex items-center gap-2.5 border-b border-line/60 px-5 py-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-900/40 dark:text-petrol-200">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-500/15 dark:text-petrol-300">
               <CalendarDays size={18} />
             </span>
             <div>
@@ -317,7 +317,7 @@ export function CalendarPage() {
                         className={clsx(
                           'group/item flex gap-3 rounded-lg border p-3 transition-all',
                           isNext
-                            ? 'border-petrol-200 bg-petrol-50/60 hover:border-petrol-300 dark:border-petrol-800 dark:bg-petrol-900/30'
+                            ? 'border-petrol-200 bg-petrol-50/60 hover:border-petrol-300 dark:border-petrol-500/30 dark:bg-petrol-500/12'
                             : 'border-transparent bg-canvas hover:bg-line/40',
                         )}
                       >

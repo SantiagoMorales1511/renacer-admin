@@ -53,7 +53,7 @@ export function CalendarAgenda({
                 className={clsx(
                   'flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg',
                   today
-                    ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-900/30'
+                    ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-500/15 dark:text-petrol-300'
                     : 'bg-canvas',
                 )}
               >

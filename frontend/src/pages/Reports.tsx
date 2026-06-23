@@ -20,7 +20,7 @@ export function ReportsPage() {
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label="Ingresos del mes" value={money(data.paymentsTotal)} accent="green" />
         <StatTile label="Gastos del mes" value={money(data.expensesTotal)} accent="red" />
-        <StatTile label="Estudiantes con deuda" value={data.debtors.length} accent="lavender" />
+        <StatTile label="Estudiantes con deuda" value={data.debtors.length} accent="sky" />
         <StatTile label="Asistieron sin pagar" value={data.attendedNotPaid.length} accent="gold" />
       </div>
 

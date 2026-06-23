@@ -24,10 +24,10 @@ export const ITEM_STYLES: Record<
   { dot: string; chip: string; text: string; time: string }
 > = {
   session: {
-    dot: 'bg-lavender-500',
-    chip: 'bg-lavender-50 hover:bg-lavender-100 dark:bg-lavender-900/30 dark:hover:bg-lavender-900/50',
-    text: 'text-lavender-900 dark:text-lavender-100',
-    time: 'text-lavender-600/80 dark:text-lavender-300/70',
+    dot: 'bg-sky-500',
+    chip: 'bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:hover:bg-sky-900/50',
+    text: 'text-sky-900 dark:text-sky-100',
+    time: 'text-sky-600/80 dark:text-sky-300/70',
   },
   other: {
     dot: 'bg-gold-500',
@@ -43,7 +43,7 @@ export const ITEM_STYLES: Record<
   },
   event: {
     dot: 'bg-petrol-500',
-    chip: 'bg-petrol-50 hover:bg-petrol-100 dark:bg-petrol-900/30 dark:hover:bg-petrol-900/50',
+    chip: 'bg-petrol-50 hover:bg-petrol-100 dark:bg-petrol-500/12 dark:hover:bg-petrol-500/20',
     text: 'text-petrol-900 dark:text-petrol-100',
     time: 'text-petrol-600/80 dark:text-petrol-300/70',
   },

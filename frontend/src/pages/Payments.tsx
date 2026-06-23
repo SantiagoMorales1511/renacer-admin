@@ -199,7 +199,7 @@ export function PaymentsPage() {
               p.student?.fullName ?? (
                 <span className="inline-flex items-center gap-1.5">
                   {p.concept || 'Otro ingreso'}
-                  <span className="badge bg-petrol-100 text-petrol-700 dark:bg-petrol-900/40 dark:text-petrol-200">
+                  <span className="badge bg-petrol-100 text-petrol-700 dark:bg-petrol-500/15 dark:text-petrol-300">
                     Otro
                   </span>
                 </span>

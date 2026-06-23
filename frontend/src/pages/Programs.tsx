@@ -35,7 +35,7 @@ export function ProgramsPage() {
               className="card group flex flex-col gap-3 p-5 transition-shadow hover:shadow-elevated"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-900/40 dark:text-petrol-200">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-500/15 dark:text-petrol-300">
                   <Icon size={20} />
                 </span>
                 <span className="text-xs font-medium text-muted">

@@ -31,7 +31,7 @@ export function CarteraPage() {
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile label="Total por cobrar" value={money(data.summary.totalDebt)} accent="red" />
-        <StatTile label="Estudiantes con deuda" value={data.summary.debtorCount} accent="lavender" />
+        <StatTile label="Estudiantes con deuda" value={data.summary.debtorCount} accent="sky" />
         <StatTile label="Módulos pendientes" value={data.summary.pendingModulesCount} accent="gold" />
       </div>
 

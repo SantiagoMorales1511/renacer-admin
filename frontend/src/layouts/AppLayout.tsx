@@ -36,21 +36,21 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen gap-3 overflow-hidden bg-canvas p-3">
-      <aside className="hidden w-60 shrink-0 overflow-hidden rounded-panel bg-surface shadow-elevated lg:block">
+      <aside className="hidden w-60 shrink-0 overflow-hidden rounded-panel bg-surface shadow-elevated dark:shadow-elevated-dark lg:block">
         <Sidebar />
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-surface shadow-elevated">
+          <aside className="absolute left-0 top-0 h-full w-64 bg-surface shadow-elevated dark:shadow-elevated-dark">
             <Sidebar onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel bg-surface px-3 shadow-card sm:px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel bg-surface px-3 shadow-card dark:shadow-card-dark sm:px-4">
           <div className="flex items-center gap-2">
             <button
               className="rounded-lg p-2 text-muted hover:bg-canvas lg:hidden"

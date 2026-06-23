@@ -14,18 +14,18 @@ export function StatTile({
   label: string;
   value: ReactNode;
   hint?: string;
-  accent?: 'petrol' | 'lavender' | 'gold' | 'red' | 'green';
+  accent?: 'petrol' | 'sky' | 'gold' | 'red' | 'green';
 }) {
   const accentClass =
-    accent === 'lavender'
-      ? 'text-lavender-600'
+    accent === 'sky'
+      ? 'text-sky-600 dark:text-sky-400'
       : accent === 'gold'
-        ? 'text-gold-600'
+        ? 'text-gold-600 dark:text-gold-400'
         : accent === 'red'
-          ? 'text-red-600'
+          ? 'text-red-600 dark:text-red-400'
           : accent === 'green'
-            ? 'text-emerald-600'
-            : 'text-petrol-600';
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : 'text-petrol-600 dark:text-petrol-400';
 
   return (
     <div className="card p-5">
