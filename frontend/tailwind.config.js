@@ -5,6 +5,34 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          50: '#eef2f7',
+          100: '#d5deea',
+          200: '#aabbd5',
+          300: '#7a96ba',
+          400: '#4f7299',
+          500: '#3a5d85',
+          600: '#2d4b73',
+          700: '#253d5e',
+          800: '#1f334e',
+          900: '#1a2b41',
+        },
+        periwinkle: {
+          50: '#f4f6fc',
+          100: '#e8ecf9',
+          200: '#d1d9f2',
+          300: '#a9b7e7',
+          400: '#8a9cd9',
+          500: '#6b7fc8',
+        },
+        lilac: {
+          50: '#faf6fc',
+          100: '#f3ebf9',
+          200: '#e8d8f3',
+          300: '#c3a1e1',
+          400: '#b088d4',
+          500: '#9a6fc4',
+        },
         petrol: {
           50: '#effafb',
           100: '#d8f0f3',
@@ -23,6 +51,7 @@ export default {
           600: '#b88f35',
         },
         surface: 'rgb(var(--surface) / <alpha-value>)',
+        'surface-tint': 'rgb(var(--surface-tint) / <alpha-value>)',
         canvas: 'rgb(var(--canvas) / <alpha-value>)',
         line: 'rgb(var(--line) / <alpha-value>)',
         ink: 'rgb(var(--ink) / <alpha-value>)',
@@ -33,10 +62,10 @@ export default {
         panel: '16px',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06)',
-        elevated: '0 2px 8px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06)',
-        'card-dark': '0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(74, 171, 185, 0.04)',
-        'elevated-dark': '0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(74, 171, 185, 0.06)',
+        card: '0 1px 3px rgba(45, 75, 115, 0.05), 0 4px 14px rgba(169, 183, 231, 0.1)',
+        elevated: '0 2px 8px rgba(45, 75, 115, 0.07), 0 10px 28px rgba(169, 183, 231, 0.12)',
+        'card-dark': '0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(169, 183, 231, 0.06)',
+        'elevated-dark': '0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(47, 146, 159, 0.08)',
       },
     },
   },

@@ -17,6 +17,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../store/auth';
+import { BrandLogo } from '../components/ui/BrandLogo';
 import type { Role } from '../types';
 
 interface NavItem {
@@ -57,10 +58,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex h-full flex-col gap-1 p-3">
       <div className="mb-4 px-2 pt-2">
-        <p className="text-lg font-semibold tracking-tight text-petrol-700 dark:text-petrol-300">
-          Renacer
-        </p>
-        <p className="text-xs text-muted">Administración</p>
+        <BrandLogo size="sm" className="mx-auto lg:mx-0" />
+        <p className="mt-2 text-center text-xs text-muted lg:text-left">Administración</p>
       </div>
       {visible.map((item) => (
         <NavLink
@@ -71,8 +70,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             clsx(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               isActive
-                ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-500/15 dark:text-petrol-300'
-                : 'text-muted hover:bg-canvas hover:text-ink',
+                ? 'bg-gradient-to-r from-petrol-50 to-periwinkle-50 text-brand-600 dark:from-petrol-500/15 dark:to-periwinkle-500/10 dark:text-petrol-300'
+                : 'text-muted hover:bg-periwinkle-50/60 hover:text-brand-600 dark:hover:bg-petrol-500/10 dark:hover:text-petrol-200',
             )
           }
         >

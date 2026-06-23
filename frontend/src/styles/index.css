@@ -3,16 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --canvas: 248 250 252;
+  --canvas: 240 245 252;
   --surface: 255 255 255;
+  --surface-tint: 251 252 255;
   --line: 226 232 240;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
+  --ink: 26 39 58;
+  --muted: 91 107 128;
 }
 
 .dark {
   --canvas: 9 14 18;
   --surface: 17 26 32;
+  --surface-tint: 20 30 38;
   --line: 36 50 58;
   --ink: 236 244 247;
   --muted: 132 154 165;
@@ -25,13 +27,41 @@ body,
 }
 
 body {
-  @apply bg-canvas text-ink antialiased;
+  @apply text-ink antialiased;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: rgb(var(--canvas));
+  background-image:
+    radial-gradient(ellipse 90% 70% at 0% 0%, rgba(169, 183, 231, 0.2), transparent 55%),
+    radial-gradient(ellipse 70% 55% at 100% 0%, rgba(216, 240, 243, 0.32), transparent 50%),
+    radial-gradient(ellipse 65% 50% at 100% 100%, rgba(195, 161, 225, 0.14), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgba(45, 75, 115, 0.07), transparent 50%);
+}
+
+.dark body {
+  background-image:
+    radial-gradient(ellipse 85% 65% at 0% 0%, rgba(169, 183, 231, 0.07), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(47, 146, 159, 0.09), transparent 50%),
+    radial-gradient(ellipse 60% 45% at 100% 100%, rgba(195, 161, 225, 0.06), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(45, 75, 115, 0.12), transparent 50%);
 }
 
 @layer components {
   .card {
-    @apply bg-surface rounded-card shadow-card dark:shadow-card-dark;
+    @apply rounded-card shadow-card dark:shadow-card-dark;
+    background: linear-gradient(
+      145deg,
+      rgb(var(--surface)) 0%,
+      rgb(var(--surface-tint)) 100%
+    );
+  }
+
+  .panel {
+    @apply rounded-panel shadow-elevated dark:shadow-elevated-dark;
+    background: linear-gradient(
+      160deg,
+      rgb(var(--surface)) 0%,
+      rgb(var(--surface-tint)) 100%
+    );
   }
 
   .btn {
@@ -43,7 +73,7 @@ body {
   }
 
   .btn-ghost {
-    @apply btn bg-canvas text-ink hover:bg-line/50 dark:bg-line/10 dark:hover:bg-line/25;
+    @apply btn bg-periwinkle-50/60 text-ink hover:bg-periwinkle-100/80 dark:bg-line/10 dark:hover:bg-petrol-500/15;
   }
 
   .btn-danger {
@@ -51,7 +81,7 @@ body {
   }
 
   .input {
-    @apply w-full rounded-lg border border-transparent bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-petrol-400/30 focus:border-petrol-500 dark:bg-line/10 dark:placeholder:text-muted/70 dark:focus:border-petrol-400 dark:focus:ring-petrol-400/20;
+    @apply w-full rounded-lg border border-transparent bg-periwinkle-50/40 px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-petrol-400/25 focus:border-petrol-500 dark:bg-line/10 dark:placeholder:text-muted/70 dark:focus:border-petrol-400 dark:focus:ring-petrol-400/20;
   }
 
   .label {

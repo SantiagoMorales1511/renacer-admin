@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
 import { Field, Input } from '../components/ui/Form';
+import { BrandLogo } from '../components/ui/BrandLogo';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -32,15 +33,23 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-petrol-700 dark:text-petrol-300">
-            Renacer
-          </h1>
-          <p className="mt-1 text-sm text-muted">Panel administrativo privado</p>
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-periwinkle-200/30 blur-3xl dark:bg-periwinkle-500/10" />
+        <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-lilac-200/25 blur-3xl dark:bg-lilac-500/8" />
+        <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-petrol-100/40 blur-3xl dark:bg-petrol-500/10" />
+      </div>
+      <div className="relative w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center">
+          <BrandLogo size="lg" />
+          <p className="mt-3 text-sm text-muted">Panel administrativo privado</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-panel bg-surface p-6 shadow-elevated dark:shadow-elevated-dark">
+        <form
+          onSubmit={handleSubmit}
+          className="relative overflow-hidden rounded-panel bg-surface/90 p-6 shadow-elevated backdrop-blur-sm dark:bg-surface/95 dark:shadow-elevated-dark"
+        >
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-periwinkle-300 via-petrol-400 to-lilac-300" />
+          <div className="space-y-4 pt-1">
           <Field label="Usuario">
             <Input
               type="text"
@@ -64,6 +73,7 @@ export function LoginPage() {
           <button type="submit" className="btn-primary w-full" disabled={loading}>
             {loading ? 'Ingresando...' : 'Iniciar sesión'}
           </button>
+          </div>
         </form>
       </div>
     </div>
