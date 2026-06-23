@@ -29,14 +29,14 @@ export function StatTile({
 
   const tintClass =
     accent === 'sky'
-      ? 'from-sky-50/90 via-surface to-surface dark:from-sky-500/10 dark:via-surface dark:to-surface-tint'
+      ? 'from-sky-50/90 to-transparent dark:from-sky-500/10 dark:to-transparent'
       : accent === 'gold'
-        ? 'from-amber-50/80 via-surface to-surface dark:from-gold-500/10 dark:via-surface dark:to-surface-tint'
+        ? 'from-amber-50/80 to-transparent dark:from-gold-500/10 dark:to-transparent'
         : accent === 'red'
-          ? 'from-red-50/80 via-surface to-surface dark:from-red-500/10 dark:via-surface dark:to-surface-tint'
+          ? 'from-red-50/80 to-transparent dark:from-red-500/10 dark:to-transparent'
           : accent === 'green'
-            ? 'from-emerald-50/80 via-surface to-surface dark:from-emerald-500/10 dark:via-surface dark:to-surface-tint'
-            : 'from-petrol-50/80 via-periwinkle-50/40 to-surface dark:from-petrol-500/10 dark:via-brand-900/20 dark:to-surface-tint';
+            ? 'from-emerald-50/80 to-transparent dark:from-emerald-500/10 dark:to-transparent'
+            : 'from-petrol-50/80 to-transparent dark:from-petrol-500/10 dark:to-transparent';
 
   return (
     <div className={clsx('card relative overflow-hidden p-5', `bg-gradient-to-br ${tintClass}`)}>
@@ -51,7 +51,7 @@ export function StatTile({
                 ? 'bg-red-300 dark:bg-red-500/50'
                 : accent === 'green'
                   ? 'bg-emerald-300 dark:bg-emerald-500/50'
-                  : 'bg-gradient-to-b from-petrol-400 to-periwinkle-300 dark:from-petrol-500/60 dark:to-periwinkle-400/40',
+                  : 'bg-petrol-400 dark:bg-petrol-500/60',
         )}
       />
       <div className="pl-3">

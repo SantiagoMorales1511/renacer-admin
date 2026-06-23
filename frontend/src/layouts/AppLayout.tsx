@@ -36,24 +36,24 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen gap-3 overflow-hidden p-3">
-      <aside className="panel hidden w-60 shrink-0 overflow-hidden lg:block">
+      <aside className="hidden w-60 shrink-0 overflow-hidden rounded-panel bg-brand-50/40 shadow-elevated dark:bg-brand-900/25 dark:shadow-elevated-dark lg:block">
         <Sidebar />
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-brand-900/40 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
-          <aside className="panel absolute left-0 top-0 h-full w-64">
+          <aside className="absolute left-0 top-0 h-full w-64 rounded-r-panel bg-brand-50/40 shadow-elevated dark:bg-brand-900/25 dark:shadow-elevated-dark">
             <Sidebar onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel bg-surface/85 px-3 shadow-card backdrop-blur-sm dark:bg-surface/90 dark:shadow-card-dark sm:px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel border-b-2 border-petrol-200/60 bg-petrol-50/45 px-3 shadow-card backdrop-blur-sm dark:border-petrol-500/20 dark:bg-petrol-900/20 dark:shadow-card-dark sm:px-4">
           <div className="flex items-center gap-2">
             <button
-              className="rounded-lg p-2 text-muted hover:bg-periwinkle-50/80 dark:hover:bg-petrol-500/15 lg:hidden"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15 lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menú"
             >
@@ -64,7 +64,7 @@ export function AppLayout() {
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={toggle}
-              className="rounded-lg p-2 text-muted hover:bg-periwinkle-50/80 dark:hover:bg-petrol-500/15"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15"
               title="Cambiar tema"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -77,7 +77,7 @@ export function AppLayout() {
             </div>
             <button
               onClick={logout}
-              className="rounded-lg p-2 text-muted hover:bg-lilac-50/80 dark:hover:bg-petrol-500/15"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15"
               title="Cerrar sesión"
             >
               <LogOut size={18} />

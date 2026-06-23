@@ -49,7 +49,7 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <div className="mb-2 h-1 w-10 rounded-full bg-gradient-to-r from-petrol-400 via-periwinkle-300 to-lilac-300" />
+        <div className="mb-2 h-1 w-10 rounded-full bg-gradient-to-r from-petrol-400 to-transparent" />
         <h1 className="text-xl font-semibold text-brand-700 dark:text-ink sm:text-2xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>

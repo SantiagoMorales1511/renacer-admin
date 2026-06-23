@@ -20,29 +20,101 @@ import { useAuth } from '../store/auth';
 import { BrandLogo } from '../components/ui/BrandLogo';
 import type { Role } from '../types';
 
+type NavTone = 'petrol' | 'sky' | 'brand' | 'periwinkle' | 'amber' | 'emerald' | 'rose';
+
 interface NavItem {
   to: string;
   label: string;
   icon: typeof Home;
+  tone: NavTone;
   roles?: Role[];
   permission?: 'canRegisterExpenses';
 }
 
+const TONE: Record<
+  NavTone,
+  {
+    bar: string;
+    activeBg: string;
+    activeText: string;
+    icon: string;
+    iconBg: string;
+    hover: string;
+  }
+> = {
+  petrol: {
+    bar: 'bg-petrol-400',
+    activeBg: 'bg-gradient-to-r from-petrol-100/70 to-transparent dark:from-petrol-500/20 dark:to-transparent',
+    activeText: 'text-petrol-800 dark:text-petrol-200',
+    icon: 'text-petrol-600 dark:text-petrol-400',
+    iconBg: 'bg-petrol-100/70 dark:bg-petrol-500/15',
+    hover: 'hover:bg-petrol-50/50 dark:hover:bg-petrol-500/10',
+  },
+  sky: {
+    bar: 'bg-sky-400',
+    activeBg: 'bg-gradient-to-r from-sky-100/70 to-transparent dark:from-sky-500/20 dark:to-transparent',
+    activeText: 'text-sky-800 dark:text-sky-200',
+    icon: 'text-sky-600 dark:text-sky-400',
+    iconBg: 'bg-sky-100/70 dark:bg-sky-500/15',
+    hover: 'hover:bg-sky-50/50 dark:hover:bg-sky-500/10',
+  },
+  brand: {
+    bar: 'bg-brand-500',
+    activeBg: 'bg-gradient-to-r from-brand-100/70 to-transparent dark:from-brand-500/20 dark:to-transparent',
+    activeText: 'text-brand-800 dark:text-brand-200',
+    icon: 'text-brand-600 dark:text-brand-300',
+    iconBg: 'bg-brand-100/70 dark:bg-brand-500/15',
+    hover: 'hover:bg-brand-50/50 dark:hover:bg-brand-500/10',
+  },
+  periwinkle: {
+    bar: 'bg-periwinkle-400',
+    activeBg: 'bg-gradient-to-r from-periwinkle-100/70 to-transparent dark:from-periwinkle-500/20 dark:to-transparent',
+    activeText: 'text-brand-700 dark:text-periwinkle-200',
+    icon: 'text-periwinkle-500 dark:text-periwinkle-300',
+    iconBg: 'bg-periwinkle-100/70 dark:bg-periwinkle-500/15',
+    hover: 'hover:bg-periwinkle-50/50 dark:hover:bg-periwinkle-500/10',
+  },
+  amber: {
+    bar: 'bg-amber-400',
+    activeBg: 'bg-gradient-to-r from-amber-100/70 to-transparent dark:from-amber-500/20 dark:to-transparent',
+    activeText: 'text-amber-900 dark:text-amber-200',
+    icon: 'text-amber-600 dark:text-amber-400',
+    iconBg: 'bg-amber-100/70 dark:bg-amber-500/15',
+    hover: 'hover:bg-amber-50/50 dark:hover:bg-amber-500/10',
+  },
+  emerald: {
+    bar: 'bg-emerald-400',
+    activeBg: 'bg-gradient-to-r from-emerald-100/70 to-transparent dark:from-emerald-500/20 dark:to-transparent',
+    activeText: 'text-emerald-800 dark:text-emerald-200',
+    icon: 'text-emerald-600 dark:text-emerald-400',
+    iconBg: 'bg-emerald-100/70 dark:bg-emerald-500/15',
+    hover: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10',
+  },
+  rose: {
+    bar: 'bg-rose-400',
+    activeBg: 'bg-gradient-to-r from-rose-100/70 to-transparent dark:from-rose-500/20 dark:to-transparent',
+    activeText: 'text-rose-800 dark:text-rose-200',
+    icon: 'text-rose-600 dark:text-rose-400',
+    iconBg: 'bg-rose-100/70 dark:bg-rose-500/15',
+    hover: 'hover:bg-rose-50/50 dark:hover:bg-rose-500/10',
+  },
+};
+
 const ITEMS: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
-  { to: '/assistant/home', label: 'Inicio', icon: Home, roles: ['ASSISTANT'] },
-  { to: '/calendar', label: 'Calendario', icon: CalendarDays },
-  { to: '/programs', label: 'Programas', icon: Layers },
-  { to: '/groups', label: 'Grupos', icon: Users },
-  { to: '/students', label: 'Estudiantes', icon: GraduationCap },
-  { to: '/modules', label: 'Módulos', icon: BookOpen, roles: ['ADMIN'] },
-  { to: '/payments', label: 'Pagos', icon: Wallet },
-  { to: '/cartera', label: 'Cartera', icon: Landmark },
-  { to: '/daily-cash', label: 'Caja del día', icon: Coins },
-  { to: '/expenses', label: 'Gastos', icon: Receipt, permission: 'canRegisterExpenses' },
-  { to: '/cash-flow', label: 'Flujo de caja', icon: TrendingUp, roles: ['ADMIN'] },
-  { to: '/reports', label: 'Reportes', icon: FileBarChart, roles: ['ADMIN'] },
-  { to: '/settings/users', label: 'Usuarios', icon: UserCog, roles: ['ADMIN'] },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tone: 'petrol', roles: ['ADMIN'] },
+  { to: '/assistant/home', label: 'Inicio', icon: Home, tone: 'petrol', roles: ['ASSISTANT'] },
+  { to: '/calendar', label: 'Calendario', icon: CalendarDays, tone: 'sky' },
+  { to: '/programs', label: 'Programas', icon: Layers, tone: 'brand' },
+  { to: '/groups', label: 'Grupos', icon: Users, tone: 'periwinkle' },
+  { to: '/students', label: 'Estudiantes', icon: GraduationCap, tone: 'periwinkle' },
+  { to: '/modules', label: 'Módulos', icon: BookOpen, tone: 'amber', roles: ['ADMIN'] },
+  { to: '/payments', label: 'Pagos', icon: Wallet, tone: 'emerald' },
+  { to: '/cartera', label: 'Cartera', icon: Landmark, tone: 'emerald' },
+  { to: '/daily-cash', label: 'Caja del día', icon: Coins, tone: 'emerald' },
+  { to: '/expenses', label: 'Gastos', icon: Receipt, tone: 'rose', permission: 'canRegisterExpenses' },
+  { to: '/cash-flow', label: 'Flujo de caja', icon: TrendingUp, tone: 'petrol', roles: ['ADMIN'] },
+  { to: '/reports', label: 'Reportes', icon: FileBarChart, tone: 'brand', roles: ['ADMIN'] },
+  { to: '/settings/users', label: 'Usuarios', icon: UserCog, tone: 'brand', roles: ['ADMIN'] },
 ];
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -56,29 +128,47 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   });
 
   return (
-    <nav className="flex h-full flex-col gap-1 p-3">
+    <nav className="flex h-full flex-col gap-0.5 p-3">
       <div className="mb-4 px-2 pt-2">
         <BrandLogo size="sm" className="mx-auto lg:mx-0" />
         <p className="mt-2 text-center text-xs text-muted lg:text-left">Administración</p>
       </div>
-      {visible.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            clsx(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              isActive
-                ? 'bg-gradient-to-r from-petrol-50 to-periwinkle-50 text-brand-600 dark:from-petrol-500/15 dark:to-periwinkle-500/10 dark:text-petrol-300'
-                : 'text-muted hover:bg-periwinkle-50/60 hover:text-brand-600 dark:hover:bg-petrol-500/10 dark:hover:text-petrol-200',
-            )
-          }
-        >
-          <item.icon size={18} />
-          {item.label}
-        </NavLink>
-      ))}
+      {visible.map((item) => {
+        const tone = TONE[item.tone];
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              clsx(
+                'relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
+                isActive ? clsx(tone.activeBg, tone.activeText) : clsx('text-muted', tone.hover),
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span
+                    className={clsx('absolute bottom-2 left-0 top-2 w-0.5 rounded-full', tone.bar)}
+                    aria-hidden
+                  />
+                )}
+                <span
+                  className={clsx(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors',
+                    isActive ? tone.iconBg : 'bg-transparent',
+                  )}
+                >
+                  <item.icon size={16} className={isActive ? tone.icon : 'text-muted'} />
+                </span>
+                {item.label}
+              </>
+            )}
+          </NavLink>
+        );
+      })}
     </nav>
   );
 }
