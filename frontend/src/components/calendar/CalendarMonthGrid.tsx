@@ -42,7 +42,7 @@ export function CalendarMonthGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-7 border-b border-line bg-canvas/60">
+      <div className="grid grid-cols-7 border-b border-line/60 bg-canvas/60">
         {WEEKDAYS.map((d, i) => (
           <div
             key={d}
@@ -77,7 +77,7 @@ export function CalendarMonthGrid({
                 }
               }}
               className={clsx(
-                'group relative min-h-[64px] cursor-pointer border-b border-r border-line p-1.5 text-left transition-colors last:border-r-0 sm:min-h-[104px] sm:p-2',
+                'group relative min-h-[72px] cursor-pointer border-b border-r border-line/60 p-1.5 text-left transition-colors last:border-r-0 sm:min-h-[104px] sm:p-2',
                 !inMonth && 'bg-canvas/40',
                 inMonth && weekend && 'bg-canvas/30',
                 inMonth && !weekend && 'bg-surface',
@@ -96,7 +96,7 @@ export function CalendarMonthGrid({
                   {format(day, 'd')}
                 </span>
                 {dayItems.length > 0 && inMonth && (
-                  <span className="hidden rounded-full bg-lavender-100 px-1.5 py-0.5 text-[10px] font-semibold text-lavender-700 dark:bg-lavender-900/50 dark:text-lavender-200 sm:inline">
+                  <span className="hidden rounded-full bg-petrol-100 px-1.5 py-0.5 text-[10px] font-semibold text-petrol-700 dark:bg-petrol-900/50 dark:text-petrol-200 sm:inline">
                     {dayItems.length}
                   </span>
                 )}

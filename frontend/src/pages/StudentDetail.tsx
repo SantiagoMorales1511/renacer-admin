@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
 import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { StatTile } from '../components/ui/Card';
@@ -64,19 +65,31 @@ export function StudentDetailPage() {
 
       <div className="mb-4">
         <h3 className="mb-3 text-sm font-semibold">Módulos</h3>
-        <Table columns={['#', 'Módulo', 'Visto', 'Pagado', 'Saldo']}>
-          {data.moduleSummary.map((m: any) => (
-            <tr key={m.moduleId}>
-              <Td>{m.number}</Td>
-              <Td>{m.name}</Td>
-              <Td><Badge status={m.attended ? 'PRESENT' : 'ABSENT'} label={m.attended ? 'Sí' : 'No'} /></Td>
-              <Td>{money(m.paid)}</Td>
-              <Td className={m.balance > 0 ? 'font-medium text-red-600' : 'text-emerald-600'}>
-                {m.balance > 0 ? money(m.balance) : 'Al día'}
-              </Td>
-            </tr>
-          ))}
-        </Table>
+        <DataTable
+          breakpoint="sm"
+          rows={data.moduleSummary as any[]}
+          rowKey={(m) => m.moduleId}
+          empty="Sin módulos."
+          columns={[
+            { header: '#', cell: (m) => m.number },
+            { header: 'Módulo', primary: true, cell: (m) => m.name },
+            {
+              header: 'Visto',
+              cell: (m) => (
+                <Badge status={m.attended ? 'PRESENT' : 'ABSENT'} label={m.attended ? 'Sí' : 'No'} />
+              ),
+            },
+            { header: 'Pagado', cell: (m) => money(m.paid) },
+            {
+              header: 'Saldo',
+              cell: (m) => (
+                <span className={m.balance > 0 ? 'font-medium text-red-600' : 'text-emerald-600'}>
+                  {m.balance > 0 ? money(m.balance) : 'Al día'}
+                </span>
+              ),
+            },
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -120,7 +133,7 @@ export function StudentDetailPage() {
               ))}
             </Select>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Valor">
               <Input name="amount" type="number" min={1} required />
             </Field>

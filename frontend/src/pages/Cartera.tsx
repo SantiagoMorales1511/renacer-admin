@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { PageHeader, Select } from '../components/ui/Form';
 import { StatTile } from '../components/ui/Card';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { money, formatDate } from '../utils/format';
 import type { Group } from '../types';
@@ -46,35 +46,46 @@ export function CarteraPage() {
         </Select>
       </div>
 
-      <Table
-        columns={['Estudiante', 'Grupo', 'Celular', 'Módulo', 'Dictado', 'Precio', 'Pagado', 'Saldo', 'Estado']}
-        empty={data.items.length === 0}
-      >
-        {data.items.map((r: any) => (
-          <tr key={`${r.studentId}:${r.moduleId}`}>
-            <Td>
-              <Link to={`/students/${r.studentId}`} className="font-medium text-petrol-600 hover:underline">
+      <DataTable
+        breakpoint="lg"
+        rows={data.items as any[]}
+        rowKey={(r) => `${r.studentId}:${r.moduleId}`}
+        empty="Sin saldos pendientes."
+        columns={[
+          {
+            header: 'Estudiante',
+            primary: true,
+            cell: (r) => (
+              <Link
+                to={`/students/${r.studentId}`}
+                className="font-medium text-petrol-600 hover:underline"
+              >
                 {r.fullName}
               </Link>
-            </Td>
-            <Td>{r.groupName ?? '-'}</Td>
-            <Td>{r.phone ?? '-'}</Td>
-            <Td>
-              {r.moduleNumber}. {r.moduleName}
-            </Td>
-            <Td>{formatDate(r.moduleDate)}</Td>
-            <Td>{money(r.baseValue)}</Td>
-            <Td>{money(r.paid)}</Td>
-            <Td className="font-medium text-red-600">{money(r.balance)}</Td>
-            <Td>
+            ),
+          },
+          { header: 'Grupo', cell: (r) => r.groupName ?? '-' },
+          { header: 'Celular', hideOnMobile: true, cell: (r) => r.phone ?? '-' },
+          { header: 'Módulo', cell: (r) => `${r.moduleNumber}. ${r.moduleName}` },
+          { header: 'Dictado', hideOnMobile: true, cell: (r) => formatDate(r.moduleDate) },
+          { header: 'Precio', hideOnMobile: true, cell: (r) => money(r.baseValue) },
+          { header: 'Pagado', hideOnMobile: true, cell: (r) => money(r.paid) },
+          {
+            header: 'Saldo',
+            className: 'font-medium text-red-600',
+            cell: (r) => money(r.balance),
+          },
+          {
+            header: 'Estado',
+            cell: (r) => (
               <Badge
                 status={r.paymentStatus === 'partial' ? 'PAUSED' : 'CANCELLED'}
                 label={r.paymentStatus === 'partial' ? 'Abono parcial' : 'Sin pago'}
               />
-            </Td>
-          </tr>
-        ))}
-      </Table>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

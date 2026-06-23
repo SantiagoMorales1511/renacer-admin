@@ -179,7 +179,7 @@ export function ModulesPage() {
                 </button>
 
                 {!programCollapsed && (
-                  <div className="border-t border-line">
+                  <div className="border-t border-line/60">
                     {program.groups.length === 0 ? (
                       <p className="px-6 py-4 text-sm text-muted">Este programa no tiene grupos.</p>
                     ) : (
@@ -187,8 +187,8 @@ export function ModulesPage() {
                         const key = `g_${group.id}`;
                         const groupCollapsed = collapsed[key];
                         return (
-                          <div key={group.id} className="border-t border-line first:border-t-0">
-                            <div className="flex items-center gap-2 bg-canvas/40 px-4 py-2.5 pl-8">
+                          <div key={group.id} className="border-t border-line/60 first:border-t-0">
+                            <div className="flex items-center gap-2 bg-canvas/40 px-4 py-2.5 pl-4 sm:pl-8">
                               <button
                                 className="flex flex-1 items-center gap-2 text-left"
                                 onClick={() => toggle(key)}
@@ -205,12 +205,12 @@ export function ModulesPage() {
                             </div>
 
                             {!groupCollapsed && (
-                              <div className="px-4 pb-3 pl-12">
+                              <div className="overflow-x-auto px-3 pb-3 pl-6 sm:px-4 sm:pl-12">
                                 {group.modules.length === 0 ? (
                                   <p className="py-3 text-sm text-muted">Sin módulos.</p>
                                 ) : (
-                                  <table className="w-full text-sm">
-                                    <tbody className="divide-y divide-line">
+                                  <table className="w-full min-w-[440px] text-sm">
+                                    <tbody className="divide-y divide-line/40">
                                       {group.modules.map((m) => (
                                         <tr key={m.id} className={m.status === 'INACTIVE' ? 'opacity-60' : undefined}>
                                           <td className="w-10 py-2 text-muted">{m.moduleNumber}</td>
@@ -223,14 +223,14 @@ export function ModulesPage() {
                                           <td className="py-2 text-right">
                                             <div className="flex justify-end gap-1">
                                               <button
-                                                className="rounded-md p-1.5 text-muted hover:bg-canvas"
+                                                className="rounded-lg p-1.5 text-muted hover:bg-canvas"
                                                 title="Editar"
                                                 onClick={() => openEdit(m)}
                                               >
                                                 <Pencil size={15} />
                                               </button>
                                               <button
-                                                className="rounded-md p-1.5 text-muted hover:bg-canvas"
+                                                className="rounded-lg p-1.5 text-muted hover:bg-canvas"
                                                 title={m.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
                                                 onClick={() => toggleStatus.mutate(m)}
                                               >
@@ -238,7 +238,7 @@ export function ModulesPage() {
                                               </button>
                                               <button
                                                 className={clsx(
-                                                  'rounded-md p-1.5',
+                                                  'rounded-lg p-1.5',
                                                   canDelete(m)
                                                     ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
                                                     : 'cursor-not-allowed text-muted/40',
@@ -276,7 +276,7 @@ export function ModulesPage() {
         onClose={() => { setOpen(false); setEditing(null); setTargetGroup(null); }}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Número">
               <Input name="moduleNumber" type="number" min={1} defaultValue={nextNumber} required />
             </Field>

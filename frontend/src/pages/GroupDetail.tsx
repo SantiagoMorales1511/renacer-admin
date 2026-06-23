@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
 import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -40,10 +41,16 @@ export function GroupDetailPage() {
         subtitle={data.program ? PROGRAM_TYPE_LABELS[data.program.type] : data.cohort ? `Cohorte ${data.cohort}` : undefined}
       />
 
-      <div className="mb-5 flex gap-1 border-b border-line">
-        <TabButton active={tab === 'summary'} onClick={() => setTab('summary')}>Resumen</TabButton>
-        <TabButton active={tab === 'modules'} onClick={() => setTab('modules')}>Módulos del grupo</TabButton>
-        <TabButton active={tab === 'matrix'} onClick={() => setTab('matrix')}>Matriz de asistencia</TabButton>
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-line/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <TabButton active={tab === 'summary'} onClick={() => setTab('summary')} short="Resumen">
+          Resumen
+        </TabButton>
+        <TabButton active={tab === 'modules'} onClick={() => setTab('modules')} short="Módulos">
+          Módulos del grupo
+        </TabButton>
+        <TabButton active={tab === 'matrix'} onClick={() => setTab('matrix')} short="Matriz">
+          Matriz de asistencia
+        </TabButton>
       </div>
 
       {tab === 'summary' && <Summary data={data} />}
@@ -57,22 +64,25 @@ function TabButton({
   active,
   onClick,
   children,
+  short,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  short: string;
 }) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+        '-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition-colors',
         active
-          ? 'border-petrol-600 text-petrol-700 dark:border-lavender-300 dark:text-lavender-100'
+          ? 'border-petrol-600 text-petrol-700 dark:border-petrol-300 dark:text-petrol-200'
           : 'border-transparent text-muted hover:text-ink',
       )}
     >
-      {children}
+      <span className="sm:hidden">{short}</span>
+      <span className="hidden sm:inline">{children}</span>
     </button>
   );
 }
@@ -224,7 +234,7 @@ function GroupModulesView({ groupId }: { groupId: string }) {
                 <div
                   key={m.id}
                   className={clsx(
-                    'flex items-center gap-3 rounded-lg border border-edge px-3 py-2',
+                    'flex items-center gap-3 rounded-lg bg-canvas px-3 py-2',
                     m.status === 'INACTIVE' && 'opacity-50',
                   )}
                 >
@@ -241,31 +251,40 @@ function GroupModulesView({ groupId }: { groupId: string }) {
         </div>
       )}
 
-      <Table
-        columns={['#', 'Nombre', 'Fecha', 'Precio', 'Estado', 'Sesiones', 'Pagos', 'Asistencias', '']}
-        empty={!isLoading && modules.length === 0}
-      >
-        {modules.map((m) => (
-          <tr key={m.id} className={m.status === 'INACTIVE' ? 'opacity-60' : undefined}>
-            <Td>{m.moduleNumber}</Td>
-            <Td className="font-medium">{m.name}</Td>
-            <Td>{m.date ? formatDate(m.date) : '-'}</Td>
-            <Td>{money(m.price)}</Td>
-            <Td><Badge status={m.status} label={MODULE_STATUS_LABELS[m.status]} /></Td>
-            <Td>{m.counts?.sessions ?? 0}</Td>
-            <Td>{m.counts?.payments ?? 0}</Td>
-            <Td>{m.counts?.attendances ?? 0}</Td>
-            <Td className="text-right">
+      <DataTable
+        breakpoint="lg"
+        rows={isLoading ? [] : modules}
+        rowKey={(m) => m.id}
+        empty="Sin módulos."
+        columns={[
+          { header: '#', cell: (m) => m.moduleNumber },
+          { header: 'Nombre', primary: true, className: 'font-medium', cell: (m) => m.name },
+          { header: 'Fecha', cell: (m) => (m.date ? formatDate(m.date) : '-') },
+          { header: 'Precio', cell: (m) => money(m.price) },
+          {
+            header: 'Estado',
+            cell: (m) => <Badge status={m.status} label={MODULE_STATUS_LABELS[m.status]} />,
+          },
+          { header: 'Sesiones', hideOnMobile: true, cell: (m) => m.counts?.sessions ?? 0 },
+          { header: 'Pagos', hideOnMobile: true, cell: (m) => m.counts?.payments ?? 0 },
+          { header: 'Asistencias', hideOnMobile: true, cell: (m) => m.counts?.attendances ?? 0 },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (m) => (
               <div className="flex justify-end gap-1">
                 <button
-                  className="rounded-md p-1.5 text-muted hover:bg-canvas"
+                  className="rounded-lg p-1.5 text-muted hover:bg-canvas"
                   title="Editar"
-                  onClick={() => { setEditing(m); setOpen(true); }}
+                  onClick={() => {
+                    setEditing(m);
+                    setOpen(true);
+                  }}
                 >
                   <Pencil size={16} />
                 </button>
                 <button
-                  className="rounded-md p-1.5 text-muted hover:bg-canvas"
+                  className="rounded-lg p-1.5 text-muted hover:bg-canvas"
                   title={m.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
                   onClick={() => toggleStatus.mutate(m)}
                 >
@@ -274,7 +293,7 @@ function GroupModulesView({ groupId }: { groupId: string }) {
                 {user?.role === 'ADMIN' && (
                   <button
                     className={clsx(
-                      'rounded-md p-1.5',
+                      'rounded-lg p-1.5',
                       canDelete(m)
                         ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
                         : 'cursor-not-allowed text-muted/40',
@@ -289,10 +308,10 @@ function GroupModulesView({ groupId }: { groupId: string }) {
                   </button>
                 )}
               </div>
-            </Td>
-          </tr>
-        ))}
-      </Table>
+            ),
+          },
+        ]}
+      />
 
       <Modal
         open={open}
@@ -300,7 +319,7 @@ function GroupModulesView({ groupId }: { groupId: string }) {
         onClose={() => { setOpen(false); setEditing(null); }}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Número">
               <Input name="moduleNumber" type="number" min={1} defaultValue={editing?.moduleNumber ?? modules.length + 1} required />
             </Field>
@@ -376,7 +395,7 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
             className={clsx(
               'inline-flex rounded-md px-2 py-1 text-xs font-medium',
               CELL_STYLES[status],
-              status === 'SIN_REGISTRO' && 'border border-line',
+              status === 'SIN_REGISTRO' && 'bg-canvas',
             )}
           >
             {ATTENDANCE_MATRIX_LABELS[status]}
@@ -384,12 +403,12 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
         ))}
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="hidden card overflow-hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-line">
-              <th className="sticky left-0 z-10 bg-surface px-4 py-3 text-left font-medium text-muted">
+            <tr className="bg-canvas/50">
+              <th className="sticky left-0 z-10 bg-canvas px-4 py-3 text-left font-medium text-muted">
                 Estudiante
               </th>
               {data.modules.map((m) => (
@@ -403,7 +422,7 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody className="divide-y divide-line/40">
             {data.rows.map((row) => (
               <tr key={row.studentId}>
                 <td className="sticky left-0 z-10 bg-surface px-4 py-2.5 font-medium text-ink">
@@ -417,7 +436,7 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
                       className={clsx(
                         'inline-flex min-w-[140px] justify-center rounded-md px-2 py-1 text-xs font-medium',
                         CELL_STYLES[cell.status],
-                        cell.status === 'SIN_REGISTRO' && 'border border-line',
+                        cell.status === 'SIN_REGISTRO' && 'bg-canvas',
                       )}
                     >
                       {ATTENDANCE_MATRIX_LABELS[cell.status]}
@@ -429,6 +448,43 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
           </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="space-y-2.5 lg:hidden">
+        {data.rows.map((row) => {
+          const moduleName = (id: string) => data.modules.find((m) => m.id === id);
+          return (
+            <div key={row.studentId} className="card p-4">
+              <Link
+                to={`/students/${row.studentId}`}
+                className="font-medium text-petrol-600 hover:underline"
+              >
+                {row.fullName}
+              </Link>
+              <ul className="mt-3 space-y-1.5">
+                {row.cells.map((cell) => {
+                  const m = moduleName(cell.moduleId);
+                  return (
+                    <li key={cell.moduleId} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="min-w-0 truncate text-muted">
+                        M{m?.number} {m?.name ? `· ${m.name}` : ''}
+                      </span>
+                      <span
+                        className={clsx(
+                          'inline-flex shrink-0 justify-center rounded-md px-2 py-1 text-xs font-medium',
+                          CELL_STYLES[cell.status],
+                          cell.status === 'SIN_REGISTRO' && 'bg-canvas',
+                        )}
+                      >
+                        {ATTENDANCE_MATRIX_LABELS[cell.status]}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

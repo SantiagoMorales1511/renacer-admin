@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -62,41 +62,62 @@ export function UsersPage() {
         }
       />
 
-      <Table columns={['Nombre', 'Correo', 'Rol', 'Registra gastos', 'Otros días', '']} empty={!isLoading && users.length === 0}>
-        {users.map((u) => (
-          <tr key={u.id}>
-            <Td className="font-medium">{u.name}</Td>
-            <Td>{u.email}</Td>
-            <Td><Badge label={u.role === 'ADMIN' ? 'Administrador' : 'Asistente'} status={u.role === 'ADMIN' ? 'FINISHED' : 'SCHEDULED'} /></Td>
-            <Td>
+      <DataTable
+        breakpoint="md"
+        rows={isLoading ? [] : users}
+        rowKey={(u) => u.id}
+        empty="Sin usuarios."
+        columns={[
+          { header: 'Nombre', primary: true, className: 'font-medium', cell: (u) => u.name },
+          { header: 'Correo', cell: (u) => u.email },
+          {
+            header: 'Rol',
+            cell: (u) => (
+              <Badge
+                label={u.role === 'ADMIN' ? 'Administrador' : 'Asistente'}
+                status={u.role === 'ADMIN' ? 'FINISHED' : 'SCHEDULED'}
+              />
+            ),
+          },
+          {
+            header: 'Registra gastos',
+            cell: (u) => (
               <input
                 type="checkbox"
                 checked={u.canRegisterExpenses}
                 disabled={u.role === 'ADMIN'}
                 onChange={(e) => update.mutate({ id: u.id, canRegisterExpenses: e.target.checked })}
               />
-            </Td>
-            <Td>
+            ),
+          },
+          {
+            header: 'Otros días',
+            cell: (u) => (
               <input
                 type="checkbox"
                 checked={u.canViewOtherDays}
                 disabled={u.role === 'ADMIN'}
                 onChange={(e) => update.mutate({ id: u.id, canViewOtherDays: e.target.checked })}
               />
-            </Td>
-            <Td className="text-right">
-              {u.id !== current?.id && (
+            ),
+          },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (u) =>
+              u.id !== current?.id ? (
                 <button
-                  className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                  onClick={() => { if (confirm(`¿Eliminar a ${u.name}?`)) remove.mutate(u.id); }}
+                  className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  onClick={() => {
+                    if (confirm(`¿Eliminar a ${u.name}?`)) remove.mutate(u.id);
+                  }}
                 >
                   <Trash2 size={16} />
                 </button>
-              )}
-            </Td>
-          </tr>
-        ))}
-      </Table>
+              ) : null,
+          },
+        ]}
+      />
 
       <Modal open={open} title="Nuevo usuario" onClose={() => setOpen(false)}>
         <form onSubmit={handleSubmit} className="space-y-4">

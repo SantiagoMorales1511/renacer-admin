@@ -26,7 +26,7 @@ export function DaySheet({
     <Sheet open title={title.charAt(0).toUpperCase() + title.slice(1)} onClose={onClose}>
       <div className="space-y-4">
         {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+          <p className="rounded-lg bg-canvas px-4 py-6 text-center text-sm text-muted">
             Sin eventos este día
           </p>
         ) : (
@@ -38,7 +38,7 @@ export function DaySheet({
                   <button
                     type="button"
                     onClick={() => onSelectItem(item)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-line p-3 text-left transition-colors hover:border-petrol-200 hover:bg-canvas dark:hover:border-petrol-800"
+                    className="flex w-full items-center gap-3 rounded-lg bg-canvas p-3 text-left transition-colors hover:bg-line/40"
                   >
                     <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
                     <span className="min-w-0 flex-1">
@@ -59,7 +59,7 @@ export function DaySheet({
           </ul>
         )}
 
-        <div className="flex flex-col gap-2 border-t border-line pt-4">
+        <div className="flex flex-col gap-2 border-t border-line/60 pt-4">
           <button className="btn-primary justify-center" onClick={onNewSession}>
             <Plus size={16} /> Nueva sesión de formación
           </button>

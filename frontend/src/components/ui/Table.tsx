@@ -14,7 +14,7 @@ export function Table({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line text-left">
+            <tr className="bg-canvas/50 text-left">
               {columns.map((c) => (
                 <th key={c} className="px-4 py-3 font-medium text-muted whitespace-nowrap">
                   {c}
@@ -22,7 +22,7 @@ export function Table({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">{children}</tbody>
+          <tbody className="divide-y divide-line/40">{children}</tbody>
         </table>
       </div>
       {empty && (

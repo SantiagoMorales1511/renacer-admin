@@ -170,37 +170,71 @@ export function SessionDetailPage() {
             </button>
           </div>
 
-          <Table columns={['Estudiante', 'Asistencia', 'Observación']} empty={rows.length === 0}>
-            {rows.map((r) => (
-              <tr key={r.studentId}>
-                <Td className="font-medium">{r.fullName}</Td>
-                <Td>
-                  <div className="flex gap-2">
+          <div className="hidden sm:block">
+            <Table columns={['Estudiante', 'Asistencia', 'Observación']} empty={rows.length === 0}>
+              {rows.map((r) => (
+                <tr key={r.studentId}>
+                  <Td className="font-medium">{r.fullName}</Td>
+                  <Td>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setRow(r.studentId, { status: 'PRESENT' })}
+                        className={`badge ${r.status === 'PRESENT' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-canvas text-muted'}`}
+                      >
+                        Asistió
+                      </button>
+                      <button
+                        onClick={() => setRow(r.studentId, { status: 'ABSENT' })}
+                        className={`badge ${r.status === 'ABSENT' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' : 'bg-canvas text-muted'}`}
+                      >
+                        No asistió
+                      </button>
+                    </div>
+                  </Td>
+                  <Td>
+                    <input
+                      className="input"
+                      value={r.observation}
+                      onChange={(e) => setRow(r.studentId, { observation: e.target.value })}
+                      placeholder="Opcional"
+                    />
+                  </Td>
+                </tr>
+              ))}
+            </Table>
+          </div>
+
+          <div className="space-y-2.5 sm:hidden">
+            {rows.length === 0 ? (
+              <div className="card px-4 py-10 text-center text-sm text-muted">Sin estudiantes.</div>
+            ) : (
+              rows.map((r) => (
+                <div key={r.studentId} className="card p-4">
+                  <p className="font-medium text-ink">{r.fullName}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setRow(r.studentId, { status: 'PRESENT' })}
-                      className={`badge ${r.status === 'PRESENT' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'border border-line text-muted'}`}
+                      className={`rounded-lg py-2 text-sm font-medium transition-colors ${r.status === 'PRESENT' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-canvas text-muted'}`}
                     >
                       Asistió
                     </button>
                     <button
                       onClick={() => setRow(r.studentId, { status: 'ABSENT' })}
-                      className={`badge ${r.status === 'ABSENT' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' : 'border border-line text-muted'}`}
+                      className={`rounded-lg py-2 text-sm font-medium transition-colors ${r.status === 'ABSENT' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' : 'bg-canvas text-muted'}`}
                     >
                       No asistió
                     </button>
                   </div>
-                </Td>
-                <Td>
                   <input
-                    className="input"
+                    className="input mt-2"
                     value={r.observation}
                     onChange={(e) => setRow(r.studentId, { observation: e.target.value })}
-                    placeholder="Opcional"
+                    placeholder="Observación (opcional)"
                   />
-                </Td>
-              </tr>
-            ))}
-          </Table>
+                </div>
+              ))
+            )}
+          </div>
 
           {save.isSuccess && <p className="mt-2 text-sm text-emerald-600">Asistencia guardada.</p>}
         </>

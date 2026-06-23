@@ -93,8 +93,8 @@ export function Combobox({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-line bg-surface shadow-card">
-          <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg bg-surface shadow-elevated">
+          <div className="flex items-center gap-2 bg-canvas/50 px-3 py-2">
             <Search size={15} className="shrink-0 text-muted" />
             <input
               ref={inputRef}

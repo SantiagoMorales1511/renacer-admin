@@ -40,7 +40,7 @@ export function DashboardPage() {
       <div className="card p-5">
         <h3 className="mb-3 text-sm font-semibold">Próxima clase</h3>
         {data.nextSession ? (
-          <Link to={`/sessions/${data.nextSession.id}`} className="block rounded-md border border-line p-3 hover:bg-canvas">
+          <Link to={`/sessions/${data.nextSession.id}`} className="block rounded-lg bg-canvas p-3 transition-colors hover:bg-line/40">
             <p className="font-medium">{sessionLabel(data.nextSession)}</p>
             {sessionSubtitle(data.nextSession) && (
               <p className="text-sm text-muted">{sessionSubtitle(data.nextSession)}</p>

@@ -28,9 +28,9 @@ export function StatTile({
             : 'text-petrol-600';
 
   return (
-    <div className="card p-4">
+    <div className="card p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className={clsx('mt-1.5 text-2xl font-semibold', accentClass)}>{value}</p>
+      <p className={clsx('mt-2 text-2xl font-semibold sm:text-3xl', accentClass)}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </div>
   );

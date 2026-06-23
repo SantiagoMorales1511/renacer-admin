@@ -4,7 +4,7 @@ import { Plus, Trash2, Sparkles, Pencil } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
 import { Combobox } from '../components/ui/Combobox';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
 import { money, formatDate, labelize, PAYMENT_METHODS } from '../utils/format';
@@ -184,59 +184,74 @@ export function PaymentsPage() {
         </div>
       </div>
 
-      <Table columns={['Fecha', 'Estudiante', 'Grupo', 'Módulo', 'Constelación', 'Método', 'Valor', '']} empty={!isLoading && payments.length === 0}>
-        {payments.map((p) => (
-          <tr key={p.id}>
-            <Td>{formatDate(p.paidAt)}</Td>
-            <Td className="font-medium">
-              {p.student?.fullName ?? (
+      <DataTable
+        breakpoint="lg"
+        rows={isLoading ? [] : payments}
+        rowKey={(p) => p.id}
+        empty="Sin pagos registrados."
+        columns={[
+          { header: 'Fecha', cell: (p) => formatDate(p.paidAt) },
+          {
+            header: 'Estudiante',
+            primary: true,
+            className: 'font-medium',
+            cell: (p) =>
+              p.student?.fullName ?? (
                 <span className="inline-flex items-center gap-1.5">
                   {p.concept || 'Otro ingreso'}
-                  <span className="badge bg-lavender-100 text-lavender-700 dark:bg-lavender-900/40 dark:text-lavender-200">
+                  <span className="badge bg-petrol-100 text-petrol-700 dark:bg-petrol-900/40 dark:text-petrol-200">
                     Otro
                   </span>
                 </span>
-              )}
-            </Td>
-            <Td>{p.group?.name ?? '-'}</Td>
-            <Td>{p.groupModule?.name ?? '-'}</Td>
-            <Td className="text-muted">
-              {p.oneDayEvent ? (
+              ),
+          },
+          { header: 'Grupo', hideOnMobile: true, cell: (p) => p.group?.name ?? '-' },
+          { header: 'Módulo', hideOnMobile: true, cell: (p) => p.groupModule?.name ?? '-' },
+          {
+            header: 'Constelación',
+            hideOnMobile: true,
+            className: 'text-muted',
+            cell: (p) =>
+              p.oneDayEvent ? (
                 <span title={p.oneDayEvent.title}>
                   {formatDate(p.oneDayEvent.date)} — {p.oneDayEvent.title}
                 </span>
               ) : (
                 '-'
-              )}
-            </Td>
-            <Td>{labelize(p.method)}</Td>
-            <Td className="font-medium">{money(p.amount)}</Td>
-            <Td className="text-right">
-              {user?.role === 'ADMIN' && (
+              ),
+          },
+          { header: 'Método', cell: (p) => labelize(p.method) },
+          { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (p) =>
+              user?.role === 'ADMIN' ? (
                 <div className="flex items-center justify-end gap-1">
                   <button
-                    className="rounded-md p-1.5 text-petrol-600 hover:bg-petrol-50 dark:hover:bg-petrol-950/30"
+                    className="rounded-lg p-1.5 text-petrol-600 hover:bg-petrol-50 dark:hover:bg-petrol-950/30"
                     onClick={() => openEdit(p)}
                   >
                     <Pencil size={16} />
                   </button>
                   <button
-                    className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    onClick={() => { if (confirm('¿Eliminar este pago?')) remove.mutate(p.id); }}
+                    className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    onClick={() => {
+                      if (confirm('¿Eliminar este pago?')) remove.mutate(p.id);
+                    }}
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
-              )}
-            </Td>
-          </tr>
-        ))}
-      </Table>
+              ) : null,
+          },
+        ]}
+      />
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8">
-          <div className="card w-full max-w-lg p-0">
-            <div className="border-b border-line px-5 py-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-panel bg-surface shadow-elevated">
+            <div className="bg-canvas/50 px-5 py-4">
               <h3 className="text-base font-semibold">Registrar pago</h3>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
@@ -260,7 +275,7 @@ export function PaymentsPage() {
                   ))}
                 </Select>
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Valor">
                   <Input name="amount" type="number" min={1} required />
                 </Field>
@@ -330,7 +345,7 @@ export function PaymentsPage() {
                 </Field>
               </>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Valor">
                 <Input name="amount" type="number" min={1} required defaultValue={editing.amount} />
               </Field>
@@ -377,7 +392,7 @@ export function PaymentsPage() {
               ))}
             </Select>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Valor">
               <Input name="amount" type="number" min={1} required />
             </Field>

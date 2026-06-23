@@ -74,7 +74,7 @@ export function EventDetailPage() {
           <Stat label="Personas que constelaron" value={String(event.constellatedCount)} />
         </div>
         {event.observations && (
-          <p className="mt-6 border-t border-line pt-4 text-sm text-muted">{event.observations}</p>
+          <p className="mt-6 border-t border-line/60 pt-4 text-sm text-muted">{event.observations}</p>
         )}
       </div>
 
@@ -88,7 +88,7 @@ export function EventDetailPage() {
           <Field label="Título">
             <Input name="title" defaultValue={event.title} required />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Fecha">
               <Input name="date" type="date" defaultValue={event.date?.slice(0, 10)} required />
             </Field>
@@ -100,7 +100,7 @@ export function EventDetailPage() {
               </Select>
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="N° asistentes">
               <Input name="attendeesCount" type="number" min={0} defaultValue={event.attendeesCount} />
             </Field>

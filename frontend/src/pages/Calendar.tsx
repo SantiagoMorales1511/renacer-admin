@@ -209,7 +209,7 @@ export function CalendarPage() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
         <div className="card overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 px-4 py-4 sm:px-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted">
                 {format(cursor, 'yyyy', { locale: es })}
@@ -222,7 +222,7 @@ export function CalendarPage() {
               <span className="hidden text-xs text-muted sm:inline">
                 {monthSessions} {monthSessions === 1 ? 'sesión' : 'sesiones'} este mes
               </span>
-              <div className="flex items-center rounded-lg border border-line bg-canvas p-0.5">
+              <div className="flex items-center rounded-lg bg-canvas p-0.5">
                 <button
                   type="button"
                   className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface hover:text-ink"
@@ -233,7 +233,7 @@ export function CalendarPage() {
                 </button>
                 <button
                   type="button"
-                  className="rounded-md px-2.5 py-1 text-xs font-medium text-petrol-600 transition-colors hover:bg-surface dark:text-lavender-300"
+                  className="rounded-md px-2.5 py-1 text-xs font-medium text-petrol-600 transition-colors hover:bg-surface dark:text-petrol-300"
                   onClick={() => setCursor(new Date())}
                 >
                   Hoy
@@ -250,7 +250,7 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 border-b border-line p-2 lg:hidden">
+          <div className="flex items-center gap-1 border-b border-line/60 p-2 lg:hidden">
             {(['agenda', 'month'] as const).map((mode) => (
               <button
                 key={mode}
@@ -288,8 +288,8 @@ export function CalendarPage() {
         </div>
 
         <div className="card hidden flex-col p-0 lg:flex">
-          <div className="flex items-center gap-2.5 border-b border-line px-5 py-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-900/50 dark:text-lavender-200">
+          <div className="flex items-center gap-2.5 border-b border-line/60 px-5 py-4">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-900/40 dark:text-petrol-200">
               <CalendarDays size={18} />
             </span>
             <div>
@@ -300,7 +300,7 @@ export function CalendarPage() {
 
           <div className="flex-1 p-3">
             {upcoming.length === 0 ? (
-              <div className="flex h-full min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed border-line px-4 py-8 text-center">
+              <div className="flex h-full min-h-[200px] flex-col items-center justify-center rounded-lg bg-canvas px-4 py-8 text-center">
                 <CalendarDays size={28} className="mb-2 text-muted/40" />
                 <p className="text-sm font-medium text-ink">Sin clases próximas</p>
                 <p className="mt-1 text-xs text-muted">Crea una sesión para empezar</p>
@@ -318,7 +318,7 @@ export function CalendarPage() {
                           'group/item flex gap-3 rounded-lg border p-3 transition-all',
                           isNext
                             ? 'border-petrol-200 bg-petrol-50/60 hover:border-petrol-300 dark:border-petrol-800 dark:bg-petrol-900/30'
-                            : 'border-line hover:border-petrol-200 hover:bg-canvas dark:hover:border-petrol-800',
+                            : 'border-transparent bg-canvas hover:bg-line/40',
                         )}
                       >
                         <div className="flex shrink-0 flex-col items-center">
@@ -328,14 +328,14 @@ export function CalendarPage() {
                           <span
                             className={clsx(
                               'text-lg font-bold leading-none',
-                              isNext ? 'text-petrol-600 dark:text-lavender-300' : 'text-ink',
+                              isNext ? 'text-petrol-600 dark:text-petrol-300' : 'text-ink',
                             )}
                           >
                             {format(sessionDate, 'd')}
                           </span>
                         </div>
-                        <div className="min-w-0 flex-1 border-l border-line pl-3">
-                          <p className="truncate text-sm font-medium text-ink group-hover/item:text-petrol-700 dark:group-hover/item:text-lavender-200">
+                        <div className="min-w-0 flex-1 border-l border-line/60 pl-3">
+                          <p className="truncate text-sm font-medium text-ink group-hover/item:text-petrol-700 dark:group-hover/item:text-petrol-200">
                             {sessionLabel(s)}
                           </p>
                           {sessionSubtitle(s) && (

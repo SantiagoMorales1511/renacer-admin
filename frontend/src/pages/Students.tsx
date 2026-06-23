@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -99,42 +99,60 @@ export function StudentsPage() {
         </Select>
       </div>
 
-      <Table columns={['Nombre', 'Grupo', 'Celular', 'Estado', '']} empty={!isLoading && students.length === 0}>
-        {students.map((s) => (
-          <tr key={s.id}>
-            <Td>
+      <DataTable
+        breakpoint="sm"
+        rows={isLoading ? [] : students}
+        rowKey={(s) => s.id}
+        empty="Sin estudiantes."
+        columns={[
+          {
+            header: 'Nombre',
+            primary: true,
+            cell: (s) => (
               <Link to={`/students/${s.id}`} className="font-medium text-petrol-600 hover:underline">
                 {s.fullName}
               </Link>
-            </Td>
-            <Td>{s.group?.name ?? '-'}</Td>
-            <Td>{s.phone ?? '-'}</Td>
-            <Td><Badge status={s.status} /></Td>
-            <Td className="text-right">
+            ),
+          },
+          { header: 'Grupo', cell: (s) => s.group?.name ?? '-' },
+          { header: 'Celular', cell: (s) => s.phone ?? '-' },
+          { header: 'Estado', cell: (s) => <Badge status={s.status} /> },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (s) => (
               <div className="flex justify-end gap-1">
-                <button className="rounded-md p-1.5 text-muted hover:bg-canvas" onClick={() => { setEditing(s); setOpen(true); }}>
+                <button
+                  className="rounded-lg p-1.5 text-muted hover:bg-canvas"
+                  onClick={() => {
+                    setEditing(s);
+                    setOpen(true);
+                  }}
+                >
                   <Pencil size={16} />
                 </button>
                 {user?.role === 'ADMIN' && (
                   <button
-                    className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    onClick={() => { if (confirm(`¿Eliminar a ${s.fullName}?`)) remove.mutate(s.id); }}
+                    className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    onClick={() => {
+                      if (confirm(`¿Eliminar a ${s.fullName}?`)) remove.mutate(s.id);
+                    }}
                   >
                     <Trash2 size={16} />
                   </button>
                 )}
               </div>
-            </Td>
-          </tr>
-        ))}
-      </Table>
+            ),
+          },
+        ]}
+      />
 
       <Modal open={open} title={editing ? 'Editar estudiante' : 'Nuevo estudiante'} onClose={() => setOpen(false)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field label="Nombre completo">
             <Input name="fullName" defaultValue={editing?.fullName} required />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Celular">
               <Input name="phone" defaultValue={editing?.phone ?? ''} />
             </Field>
@@ -145,7 +163,7 @@ export function StudentsPage() {
           <Field label="Correo">
             <Input name="email" type="email" defaultValue={editing?.email ?? ''} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Grupo">
               <Select name="groupId" defaultValue={editing?.groupId ?? ''}>
                 <option value="">Sin grupo</option>

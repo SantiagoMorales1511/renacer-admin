@@ -57,7 +57,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex h-full flex-col gap-1 p-3">
       <div className="mb-4 px-2 pt-2">
-        <p className="text-lg font-semibold tracking-tight text-petrol-700 dark:text-lavender-200">
+        <p className="text-lg font-semibold tracking-tight text-petrol-700 dark:text-petrol-200">
           Renacer
         </p>
         <p className="text-xs text-muted">Administración</p>
@@ -71,7 +71,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             clsx(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               isActive
-                ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-900/50 dark:text-lavender-100'
+                ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-900/40 dark:text-petrol-200'
                 : 'text-muted hover:bg-canvas hover:text-ink',
             )
           }

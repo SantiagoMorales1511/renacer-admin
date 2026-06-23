@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { PageHeader, Field, Input } from '../components/ui/Form';
 import { StatTile } from '../components/ui/Card';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../store/auth';
 import { money, formatTime, labelize } from '../utils/format';
 
@@ -60,18 +60,20 @@ export function DailyCashPage() {
       </div>
 
       <h3 className="mb-3 text-sm font-semibold">Pagos registrados</h3>
-      <Table columns={['Hora', 'Estudiante', 'Grupo', 'Módulo', 'Método', 'Valor']} empty={data.payments.length === 0}>
-        {data.payments.map((p: any) => (
-          <tr key={p.id}>
-            <Td>{formatTime(p.paidAt)}</Td>
-            <Td className="font-medium">{p.studentName}</Td>
-            <Td>{p.groupName ?? '-'}</Td>
-            <Td>{p.moduleName}</Td>
-            <Td>{labelize(p.method)}</Td>
-            <Td className="font-medium">{money(p.amount)}</Td>
-          </tr>
-        ))}
-      </Table>
+      <DataTable
+        breakpoint="sm"
+        rows={data.payments as any[]}
+        rowKey={(p) => p.id}
+        empty="Sin pagos hoy."
+        columns={[
+          { header: 'Hora', cell: (p) => formatTime(p.paidAt) },
+          { header: 'Estudiante', primary: true, className: 'font-medium', cell: (p) => p.studentName },
+          { header: 'Grupo', cell: (p) => p.groupName ?? '-' },
+          { header: 'Módulo', cell: (p) => p.moduleName },
+          { header: 'Método', cell: (p) => labelize(p.method) },
+          { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
+        ]}
+      />
     </div>
   );
 }

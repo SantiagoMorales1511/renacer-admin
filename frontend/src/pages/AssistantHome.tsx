@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { StatTile } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { money, formatDateTime, formatTime, labelize, sessionLabel, sessionSubtitle } from '../utils/format';
 
@@ -32,7 +32,7 @@ export function AssistantHomePage() {
         <div className="card p-5">
           <h3 className="mb-3 text-sm font-semibold">Próxima clase</h3>
           {data.nextSession ? (
-            <Link to={`/sessions/${data.nextSession.id}`} className="block rounded-md border border-line p-3 hover:bg-canvas">
+            <Link to={`/sessions/${data.nextSession.id}`} className="block rounded-lg bg-canvas p-3 transition-colors hover:bg-line/40">
               <p className="font-medium">{sessionLabel(data.nextSession)}</p>
               {sessionSubtitle(data.nextSession) && (
                 <p className="text-sm text-muted">{sessionSubtitle(data.nextSession)}</p>
@@ -49,7 +49,7 @@ export function AssistantHomePage() {
           {data.pendingAttendance.length === 0 ? (
             <p className="text-sm text-muted">Sin asistencia pendiente hoy.</p>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-line/40">
               {data.pendingAttendance.map((s: any) => (
                 <li key={s.sessionId} className="flex items-center justify-between py-2 text-sm">
                   <Link to={`/sessions/${s.sessionId}`} className="text-petrol-600 hover:underline">
@@ -66,36 +66,44 @@ export function AssistantHomePage() {
       <div className="mt-4 grid gap-4">
         <div>
           <h3 className="mb-3 text-sm font-semibold">Clases de hoy</h3>
-          <Table columns={['Actividad', 'Detalle', 'Horario', 'Lugar', 'Estado']} empty={data.todaySessions.length === 0}>
-            {data.todaySessions.map((s: any) => (
-              <tr key={s.id}>
-                <Td>
+          <DataTable
+            breakpoint="sm"
+            rows={data.todaySessions as any[]}
+            rowKey={(s) => s.id}
+            empty="Sin clases hoy."
+            columns={[
+              {
+                header: 'Actividad',
+                primary: true,
+                cell: (s) => (
                   <Link to={`/sessions/${s.id}`} className="font-medium text-petrol-600 hover:underline">
                     {s.title ?? s.group ?? '-'}
                   </Link>
-                </Td>
-                <Td>{s.module ?? '-'}</Td>
-                <Td>{s.startTime ? `${s.startTime} - ${s.endTime ?? ''}` : '-'}</Td>
-                <Td>{s.place ?? '-'}</Td>
-                <Td><Badge status={s.status} /></Td>
-              </tr>
-            ))}
-          </Table>
+                ),
+              },
+              { header: 'Detalle', cell: (s) => s.module ?? '-' },
+              { header: 'Horario', cell: (s) => (s.startTime ? `${s.startTime} - ${s.endTime ?? ''}` : '-') },
+              { header: 'Lugar', cell: (s) => s.place ?? '-' },
+              { header: 'Estado', cell: (s) => <Badge status={s.status} /> },
+            ]}
+          />
         </div>
 
         <div>
           <h3 className="mb-3 text-sm font-semibold">Pagos registrados hoy</h3>
-          <Table columns={['Estudiante', 'Módulo', 'Método', 'Valor', 'Hora']} empty={data.paymentsToday.length === 0}>
-            {data.paymentsToday.map((p: any) => (
-              <tr key={p.id}>
-                <Td className="font-medium">{p.studentName}</Td>
-                <Td>{p.moduleName}</Td>
-                <Td>{labelize(p.method)}</Td>
-                <Td className="font-medium">{money(p.amount)}</Td>
-                <Td>{formatTime(p.paidAt)}</Td>
-              </tr>
-            ))}
-          </Table>
+          <DataTable
+            breakpoint="sm"
+            rows={data.paymentsToday as any[]}
+            rowKey={(p) => p.id}
+            empty="Sin pagos hoy."
+            columns={[
+              { header: 'Estudiante', primary: true, className: 'font-medium', cell: (p) => p.studentName },
+              { header: 'Módulo', cell: (p) => p.moduleName },
+              { header: 'Método', cell: (p) => labelize(p.method) },
+              { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
+              { header: 'Hora', cell: (p) => formatTime(p.paidAt) },
+            ]}
+          />
         </div>
       </div>
     </div>

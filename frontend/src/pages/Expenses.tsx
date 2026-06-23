@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
 import { money, formatDate, labelize, EXPENSE_CATEGORIES } from '../utils/format';
@@ -100,33 +100,41 @@ export function ExpensesPage() {
             <span className="text-muted">Total: </span>
             <span className="font-semibold text-red-600">{money(total)}</span>
           </div>
-          <Table columns={['Fecha', 'Categoría', 'Descripción', 'Grupo', 'Valor', '']} empty={!isLoading && expenses.length === 0}>
-            {expenses.map((e) => (
-              <tr key={e.id}>
-                <Td>{formatDate(e.date)}</Td>
-                <Td>{labelize(e.category)}</Td>
-                <Td>{e.description}</Td>
-                <Td>{e.group?.name ?? '-'}</Td>
-                <Td className="font-medium">{money(e.amount)}</Td>
-                <Td className="text-right">
+          <DataTable
+            breakpoint="md"
+            rows={isLoading ? [] : expenses}
+            rowKey={(e) => e.id}
+            empty="Sin gastos."
+            columns={[
+              { header: 'Fecha', cell: (e) => formatDate(e.date) },
+              { header: 'Categoría', cell: (e) => labelize(e.category) },
+              { header: 'Descripción', primary: true, cell: (e) => e.description },
+              { header: 'Grupo', cell: (e) => e.group?.name ?? '-' },
+              { header: 'Valor', className: 'font-medium', cell: (e) => money(e.amount) },
+              {
+                header: 'Acciones',
+                align: 'right',
+                cell: (e) => (
                   <div className="flex items-center justify-end gap-1">
                     <button
-                      className="rounded-md p-1.5 text-petrol-600 hover:bg-petrol-50 dark:hover:bg-petrol-950/30"
+                      className="rounded-lg p-1.5 text-petrol-600 hover:bg-petrol-50 dark:hover:bg-petrol-950/30"
                       onClick={() => setEditing(e)}
                     >
                       <Pencil size={16} />
                     </button>
                     <button
-                      className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                      onClick={() => { if (confirm('¿Eliminar este gasto?')) remove.mutate(e.id); }}
+                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      onClick={() => {
+                        if (confirm('¿Eliminar este gasto?')) remove.mutate(e.id);
+                      }}
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
-                </Td>
-              </tr>
-            ))}
-          </Table>
+                ),
+              },
+            ]}
+          />
         </>
       ) : (
         <div className="card p-6 text-sm text-muted">
@@ -136,12 +144,12 @@ export function ExpensesPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8">
-          <div className="card w-full max-w-lg p-0">
-            <div className="border-b border-line px-5 py-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-panel bg-surface shadow-elevated">
+            <div className="bg-canvas/50 px-5 py-4">
               <h3 className="text-base font-semibold">Nuevo gasto</h3>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Fecha">
                   <Input name="date" type="date" defaultValue={today()} />
                 </Field>
@@ -156,7 +164,7 @@ export function ExpensesPage() {
               <Field label="Descripción">
                 <Textarea name="description" required />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Valor">
                   <Input name="amount" type="number" min={1} required />
                 </Field>
@@ -183,7 +191,7 @@ export function ExpensesPage() {
       <Modal open={!!editing} title="Editar gasto" onClose={() => setEditing(null)}>
         {editing && (
           <form onSubmit={handleEditSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Fecha">
                 <Input name="date" type="date" defaultValue={editing.date.slice(0, 10)} />
               </Field>
@@ -198,7 +206,7 @@ export function ExpensesPage() {
             <Field label="Descripción">
               <Textarea name="description" required defaultValue={editing.description} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Valor">
                 <Input name="amount" type="number" min={1} required defaultValue={editing.amount} />
               </Field>

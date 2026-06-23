@@ -125,7 +125,7 @@ export function CalendarItemPreview({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+        <div className="flex flex-wrap gap-2 border-t border-line/60 pt-4">
           <button className="btn-primary" onClick={onEdit}>
             Editar
           </button>

@@ -39,7 +39,7 @@ export function CalendarAgenda({
   }
 
   return (
-    <div className="divide-y divide-line">
+    <div className="divide-y divide-line/40">
       {groups.map((group) => {
         const today = isToday(group.date);
         return (
@@ -51,10 +51,10 @@ export function CalendarAgenda({
             >
               <span
                 className={clsx(
-                  'flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg border',
+                  'flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg',
                   today
-                    ? 'border-petrol-200 bg-petrol-50 dark:border-petrol-800 dark:bg-petrol-900/30'
-                    : 'border-line bg-canvas',
+                    ? 'bg-petrol-50 text-petrol-700 dark:bg-petrol-900/30'
+                    : 'bg-canvas',
                 )}
               >
                 <span className="text-[10px] font-semibold uppercase text-muted">
@@ -63,7 +63,7 @@ export function CalendarAgenda({
                 <span
                   className={clsx(
                     'text-base font-bold leading-none',
-                    today ? 'text-petrol-600 dark:text-lavender-300' : 'text-ink',
+                    today ? 'text-petrol-600 dark:text-petrol-300' : 'text-ink',
                   )}
                 >
                   {format(group.date, 'd')}
@@ -88,7 +88,7 @@ export function CalendarAgenda({
                     <button
                       type="button"
                       onClick={() => onSelectItem(item)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-line p-2.5 text-left transition-colors hover:border-petrol-200 hover:bg-canvas dark:hover:border-petrol-800"
+                      className="flex w-full items-center gap-3 rounded-lg bg-canvas p-2.5 text-left transition-colors hover:bg-line/40"
                     >
                       <span className={clsx('h-2 w-2 shrink-0 rounded-full', style.dot)} />
                       <span className="min-w-0 flex-1">

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -154,24 +154,27 @@ export function ProgramDetailPage() {
                 <Plus size={16} /> Nuevo grupo
               </button>
             </div>
-            <Table
-              columns={['Nombre', 'Cohorte', 'Estudiantes', 'Sesiones', 'Estado']}
-              empty={(program.groups ?? []).length === 0}
-            >
-              {(program.groups ?? []).map((g) => (
-                <tr key={g.id}>
-                  <Td>
+            <DataTable
+              breakpoint="sm"
+              rows={program.groups ?? []}
+              rowKey={(g) => g.id}
+              empty="Sin grupos."
+              columns={[
+                {
+                  header: 'Nombre',
+                  primary: true,
+                  cell: (g) => (
                     <Link to={`/groups/${g.id}`} className="font-medium text-petrol-600 hover:underline">
                       {g.name}
                     </Link>
-                  </Td>
-                  <Td>{g.cohort ?? '-'}</Td>
-                  <Td>{g._count?.students ?? 0}</Td>
-                  <Td>{g._count?.sessions ?? 0}</Td>
-                  <Td><Badge status={g.status} /></Td>
-                </tr>
-              ))}
-            </Table>
+                  ),
+                },
+                { header: 'Cohorte', cell: (g) => g.cohort ?? '-' },
+                { header: 'Estudiantes', cell: (g) => g._count?.students ?? 0 },
+                { header: 'Sesiones', cell: (g) => g._count?.sessions ?? 0 },
+                { header: 'Estado', cell: (g) => <Badge status={g.status} /> },
+              ]}
+            />
           </section>
 
           <section>
@@ -186,36 +189,47 @@ export function ProgramDetailPage() {
                 </button>
               )}
             </div>
-            <Table columns={['#', 'Nombre', 'Precio por defecto', 'Estado', '']} empty={(program.moduleTemplates ?? []).length === 0}>
-              {(program.moduleTemplates ?? []).map((t: ProgramModuleTemplate) => (
-                <tr key={t.id}>
-                  <Td>{t.moduleNumber}</Td>
-                  <Td className="font-medium">{t.name}</Td>
-                  <Td>{money(t.defaultPrice)}</Td>
-                  <Td>
-                    <Badge status={t.status} label={MODULE_STATUS_LABELS[t.status]} />
-                  </Td>
-                  <Td className="text-right">
-                    {user?.role === 'ADMIN' && (
+            <DataTable
+              breakpoint="sm"
+              rows={program.moduleTemplates ?? []}
+              rowKey={(t) => t.id}
+              empty="Sin plantillas."
+              columns={[
+                { header: '#', cell: (t) => t.moduleNumber },
+                { header: 'Nombre', primary: true, className: 'font-medium', cell: (t) => t.name },
+                { header: 'Precio por defecto', cell: (t) => money(t.defaultPrice) },
+                {
+                  header: 'Estado',
+                  cell: (t) => <Badge status={t.status} label={MODULE_STATUS_LABELS[t.status]} />,
+                },
+                {
+                  header: 'Acciones',
+                  align: 'right',
+                  cell: (t) =>
+                    user?.role === 'ADMIN' ? (
                       <div className="flex justify-end gap-1">
                         <button
-                          className="rounded-md p-1.5 text-muted hover:bg-canvas"
-                          onClick={() => { setEditingTemplate(t); setTemplateOpen(true); }}
+                          className="rounded-lg p-1.5 text-muted hover:bg-canvas"
+                          onClick={() => {
+                            setEditingTemplate(t);
+                            setTemplateOpen(true);
+                          }}
                         >
                           <Pencil size={16} />
                         </button>
                         <button
-                          className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => { if (confirm(`¿Eliminar la plantilla ${t.name}?`)) removeTemplate.mutate(t.id); }}
+                          className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => {
+                            if (confirm(`¿Eliminar la plantilla ${t.name}?`)) removeTemplate.mutate(t.id);
+                          }}
                         >
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    )}
-                  </Td>
-                </tr>
-              ))}
-            </Table>
+                    ) : null,
+                },
+              ]}
+            />
           </section>
         </div>
       )}
@@ -225,7 +239,7 @@ export function ProgramDetailPage() {
           <Field label="Nombre">
             <Input name="name" required placeholder="Grupo 1" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Cohorte">
               <Input name="cohort" placeholder="2026-1" />
             </Field>
@@ -243,7 +257,7 @@ export function ProgramDetailPage() {
           <Field label="Notas">
             <Textarea name="notes" />
           </Field>
-          <div className="space-y-3 rounded-lg border border-line bg-canvas/50 p-3">
+          <div className="space-y-3 rounded-lg bg-canvas p-3">
             <Field label="Precio base por módulo">
               <Input name="defaultModulePrice" type="number" min={0} defaultValue={300000} />
             </Field>
@@ -267,7 +281,7 @@ export function ProgramDetailPage() {
         onClose={() => { setTemplateOpen(false); setEditingTemplate(null); }}
       >
         <form onSubmit={handleTemplateSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Número">
               <Input name="moduleNumber" type="number" min={1} defaultValue={editingTemplate?.moduleNumber ?? (program.moduleTemplates?.length ?? 0) + 1} required />
             </Field>
@@ -302,7 +316,7 @@ export function ProgramDetailPage() {
           <Field label="Título">
             <Input name="title" defaultValue={editingEvent?.title} required placeholder="Constelación de un día - Junio" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Fecha">
               <Input name="date" type="date" defaultValue={editingEvent?.date?.slice(0, 10)} required />
             </Field>
@@ -314,7 +328,7 @@ export function ProgramDetailPage() {
               </Select>
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="N° asistentes">
               <Input name="attendeesCount" type="number" min={0} defaultValue={editingEvent?.attendeesCount ?? 0} />
             </Field>
@@ -361,39 +375,48 @@ function EventsSection({
           <Plus size={16} /> Nuevo evento
         </button>
       </div>
-      <Table
-        columns={['Fecha', 'Título', 'Asistentes', 'Constelaron', 'Estado', '']}
-        empty={events.length === 0}
-      >
-        {events.map((ev) => (
-          <tr key={ev.id}>
-            <Td>
+      <DataTable
+        breakpoint="sm"
+        rows={events}
+        rowKey={(ev) => ev.id}
+        empty="Sin eventos."
+        columns={[
+          {
+            header: 'Fecha',
+            cell: (ev) => (
               <Link to={`/events/${ev.id}`} className="text-petrol-600 hover:underline">
                 {formatDate(ev.date)}
               </Link>
-            </Td>
-            <Td className="font-medium">{ev.title}</Td>
-            <Td>{ev.attendeesCount}</Td>
-            <Td>{ev.constellatedCount}</Td>
-            <Td><Badge status={ev.status} label={EVENT_STATUS_LABELS[ev.status]} /></Td>
-            <Td className="text-right">
+            ),
+          },
+          { header: 'Título', primary: true, className: 'font-medium', cell: (ev) => ev.title },
+          { header: 'Asistentes', cell: (ev) => ev.attendeesCount },
+          { header: 'Constelaron', cell: (ev) => ev.constellatedCount },
+          {
+            header: 'Estado',
+            cell: (ev) => <Badge status={ev.status} label={EVENT_STATUS_LABELS[ev.status]} />,
+          },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (ev) => (
               <div className="flex justify-end gap-1">
-                <button className="rounded-md p-1.5 text-muted hover:bg-canvas" onClick={() => onEdit(ev)}>
+                <button className="rounded-lg p-1.5 text-muted hover:bg-canvas" onClick={() => onEdit(ev)}>
                   <Pencil size={16} />
                 </button>
                 {canDelete && (
                   <button
-                    className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => onDelete(ev)}
                   >
                     <Trash2 size={16} />
                   </button>
                 )}
               </div>
-            </Td>
-          </tr>
-        ))}
-      </Table>
+            ),
+          },
+        ]}
+      />
     </section>
   );
 }

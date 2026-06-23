@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
-import { Table, Td } from '../components/ui/Table';
+import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -94,27 +94,44 @@ export function GroupsPage() {
         }
       />
 
-      <Table columns={['Nombre', 'Programa', 'Cohorte', 'Estudiantes', 'Sesiones', 'Estado', '']} empty={!isLoading && groups.length === 0}>
-        {groups.map((g) => (
-          <tr key={g.id}>
-            <Td>
+      <DataTable
+        breakpoint="md"
+        rows={isLoading ? [] : groups}
+        rowKey={(g) => g.id}
+        empty="Sin grupos."
+        columns={[
+          {
+            header: 'Nombre',
+            primary: true,
+            cell: (g) => (
               <Link to={`/groups/${g.id}`} className="font-medium text-petrol-600 hover:underline">
                 {g.name}
               </Link>
-            </Td>
-            <Td className="text-muted">{g.program ? PROGRAM_TYPE_LABELS[g.program.type] : '-'}</Td>
-            <Td>{g.cohort ?? '-'}</Td>
-            <Td>{g._count?.students ?? 0}</Td>
-            <Td>{g._count?.sessions ?? 0}</Td>
-            <Td><Badge status={g.status} /></Td>
-            <Td className="text-right">
+            ),
+          },
+          {
+            header: 'Programa',
+            className: 'text-muted',
+            cell: (g) => (g.program ? PROGRAM_TYPE_LABELS[g.program.type] : '-'),
+          },
+          { header: 'Cohorte', cell: (g) => g.cohort ?? '-' },
+          { header: 'Estudiantes', cell: (g) => g._count?.students ?? 0 },
+          { header: 'Sesiones', cell: (g) => g._count?.sessions ?? 0 },
+          { header: 'Estado', cell: (g) => <Badge status={g.status} /> },
+          {
+            header: 'Acciones',
+            align: 'right',
+            cell: (g) => (
               <div className="flex justify-end gap-1">
-                <button className="rounded-md p-1.5 text-muted hover:bg-canvas" onClick={() => openEdit(g)}>
+                <button
+                  className="rounded-lg p-1.5 text-muted hover:bg-canvas"
+                  onClick={() => openEdit(g)}
+                >
                   <Pencil size={16} />
                 </button>
                 {user?.role === 'ADMIN' && (
                   <button
-                    className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => {
                       if (confirm(`¿Eliminar el grupo ${g.name}?`)) remove.mutate(g.id);
                     }}
@@ -123,10 +140,10 @@ export function GroupsPage() {
                   </button>
                 )}
               </div>
-            </Td>
-          </tr>
-        ))}
-      </Table>
+            ),
+          },
+        ]}
+      />
 
       <Modal
         open={open}
@@ -144,7 +161,7 @@ export function GroupsPage() {
           <Field label="Nombre">
             <Input name="name" defaultValue={editing?.name} required />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Cohorte">
               <Input name="cohort" defaultValue={editing?.cohort ?? ''} placeholder="2026-1" />
             </Field>
@@ -163,7 +180,7 @@ export function GroupsPage() {
             <Textarea name="notes" defaultValue={editing?.notes ?? ''} />
           </Field>
           {!editing && (
-            <div className="space-y-3 rounded-lg border border-line bg-canvas/50 p-3">
+            <div className="space-y-3 rounded-lg bg-canvas p-3">
               <Field label="Precio base por módulo">
                 <Input name="defaultModulePrice" type="number" min={0} defaultValue={300000} />
               </Field>
