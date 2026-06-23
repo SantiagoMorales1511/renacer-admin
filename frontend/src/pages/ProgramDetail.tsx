@@ -76,6 +76,11 @@ export function ProgramDetailPage() {
     },
   });
 
+  const removeEvent = useMutation({
+    mutationFn: async (eventId: string) => (await api.delete(`/events/${eventId}`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['program', id] }),
+  });
+
   if (isLoading || !program) return <p className="text-muted">Cargando...</p>;
 
   const isEvent = program.type === 'ONE_DAY_CONSTELLATION_EVENT';
@@ -135,6 +140,10 @@ export function ProgramDetailPage() {
             setEditingEvent(ev);
             setEventOpen(true);
           }}
+          onDelete={(ev) => {
+            if (confirm(`¿Eliminar el evento "${ev.title}"?`)) removeEvent.mutate(ev.id);
+          }}
+          canDelete={user?.role === 'ADMIN'}
         />
       ) : (
         <div className="space-y-8">
@@ -335,10 +344,14 @@ function EventsSection({
   events,
   onNew,
   onEdit,
+  onDelete,
+  canDelete,
 }: {
   events: OneDayEvent[];
   onNew: () => void;
   onEdit: (ev: OneDayEvent) => void;
+  onDelete: (ev: OneDayEvent) => void;
+  canDelete: boolean;
 }) {
   return (
     <section>
@@ -364,9 +377,19 @@ function EventsSection({
             <Td>{ev.constellatedCount}</Td>
             <Td><Badge status={ev.status} label={EVENT_STATUS_LABELS[ev.status]} /></Td>
             <Td className="text-right">
-              <button className="rounded-md p-1.5 text-muted hover:bg-canvas" onClick={() => onEdit(ev)}>
-                <Pencil size={16} />
-              </button>
+              <div className="flex justify-end gap-1">
+                <button className="rounded-md p-1.5 text-muted hover:bg-canvas" onClick={() => onEdit(ev)}>
+                  <Pencil size={16} />
+                </button>
+                {canDelete && (
+                  <button
+                    className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    onClick={() => onDelete(ev)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
             </Td>
           </tr>
         ))}

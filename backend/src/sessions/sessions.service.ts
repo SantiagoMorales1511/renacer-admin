@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseDateOnly } from '../common/date.util';
 import { CreateSessionDto, UpdateSessionDto } from './dto/session.dto';
 
 const sessionInclude = {
@@ -17,8 +18,8 @@ export class SessionsService {
     if (params.groupId) where.groupId = params.groupId;
     if (params.from || params.to) {
       where.date = {};
-      if (params.from) where.date.gte = new Date(params.from);
-      if (params.to) where.date.lte = new Date(params.to);
+      if (params.from) where.date.gte = new Date(`${params.from}T00:00:00.000Z`);
+      if (params.to) where.date.lte = new Date(`${params.to}T23:59:59.999Z`);
     }
     return this.prisma.classSession.findMany({
       where,
@@ -77,7 +78,7 @@ export class SessionsService {
         groupModuleId: isRegular ? dto.groupModuleId : null,
         oneDayEventId: dto.oneDayEventId ?? null,
         title: isOther ? dto.title : null,
-        date: new Date(dto.date),
+        date: parseDateOnly(dto.date)!,
         startTime: dto.startTime,
         endTime: dto.endTime,
         place: dto.place,
@@ -94,7 +95,7 @@ export class SessionsService {
       where: { id },
       data: {
         ...dto,
-        date: dto.date ? new Date(dto.date) : undefined,
+        date: dto.date ? parseDateOnly(dto.date)! : undefined,
       },
       include: sessionInclude,
     });

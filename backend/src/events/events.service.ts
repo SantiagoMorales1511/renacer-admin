@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseDateOnly } from '../common/date.util';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 
 @Injectable()
@@ -29,7 +30,7 @@ export class EventsService {
       data: {
         programId: dto.programId,
         title: dto.title,
-        date: new Date(dto.date),
+        date: parseDateOnly(dto.date)!,
         attendeesCount: dto.attendeesCount ?? 0,
         constellatedCount: dto.constellatedCount ?? 0,
         observations: dto.observations,
@@ -44,7 +45,7 @@ export class EventsService {
       where: { id },
       data: {
         ...dto,
-        date: dto.date ? new Date(dto.date) : undefined,
+        date: dto.date ? parseDateOnly(dto.date)! : undefined,
       },
     });
   }
