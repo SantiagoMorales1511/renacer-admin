@@ -1,16 +1,12 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addMonths,
-  eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
-  isSameDay,
   isSameMonth,
-  isToday,
-  isWeekend,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
@@ -18,24 +14,40 @@ import { es } from 'date-fns/locale';
 import { Plus, ChevronLeft, ChevronRight, Clock, CalendarDays, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
-import { Modal } from '../components/ui/Modal';
-import { formatDate, sessionLabel, sessionSubtitle } from '../utils/format';
+import { PageHeader } from '../components/ui/Form';
+import { useAuth } from '../store/auth';
+import { sessionLabel, sessionSubtitle } from '../utils/format';
 import type { ClassSession, Group, GroupModule, OneDayEvent } from '../types';
+import { buildCalendarItems, itemsForDay } from '../components/calendar/types';
+import type { CalendarItem } from '../components/calendar/types';
+import { CalendarMonthGrid } from '../components/calendar/CalendarMonthGrid';
+import { CalendarAgenda } from '../components/calendar/CalendarAgenda';
+import { CalendarItemPreview } from '../components/calendar/CalendarItemPreview';
+import { DaySheet } from '../components/calendar/DaySheet';
+import { SessionFormModal, SessionVariant } from '../components/calendar/SessionFormModal';
+import { ModuleFormModal } from '../components/calendar/ModuleFormModal';
+import { EventFormModal } from '../components/calendar/EventFormModal';
 
-const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const MAX_VISIBLE_SESSIONS = 2;
-
-function isOtherSession(s: ClassSession) {
-  return !s.groupId && !!s.title;
-}
+type SessionFormState = {
+  mode: 'create' | 'edit';
+  variant: SessionVariant;
+  session?: ClassSession;
+  defaultDate?: string;
+};
 
 export function CalendarPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [cursor, setCursor] = useState(new Date());
-  const [open, setOpen] = useState(false);
-  const [otherOpen, setOtherOpen] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [mobileView, setMobileView] = useState<'agenda' | 'month'>('agenda');
+
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [preview, setPreview] = useState<CalendarItem | null>(null);
+  const [sessionForm, setSessionForm] = useState<SessionFormState | null>(null);
+  const [moduleForm, setModuleForm] = useState<GroupModule | null>(null);
+  const [eventForm, setEventForm] = useState<OneDayEvent | null>(null);
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
@@ -57,11 +69,6 @@ export function CalendarPage() {
     queryKey: ['groups'],
     queryFn: async () => (await api.get<Group[]>('/groups')).data,
   });
-  const { data: modules = [] } = useQuery({
-    queryKey: ['group', selectedGroupId, 'modules'],
-    queryFn: async () => (await api.get<GroupModule[]>(`/groups/${selectedGroupId}/modules`)).data,
-    enabled: !!selectedGroupId,
-  });
   const { data: oneDayEvents = [] } = useQuery({
     queryKey: ['events'],
     queryFn: async () => (await api.get<OneDayEvent[]>('/events')).data,
@@ -72,57 +79,108 @@ export function CalendarPage() {
   });
   const moduleDates = useMemo(() => allGroupModules.filter((m) => m.date), [allGroupModules]);
 
-  const days = useMemo(
-    () =>
-      eachDayOfInterval({
-        start: startOfWeek(monthStart, { weekStartsOn: 1 }),
-        end: endOfWeek(monthEnd, { weekStartsOn: 1 }),
-      }),
-    [monthStart.getTime(), monthEnd.getTime()],
+  const items = useMemo(
+    () => buildCalendarItems({ sessions, moduleDates, events: oneDayEvents }),
+    [sessions, moduleDates, oneDayEvents],
   );
 
-  const create = useMutation({
-    mutationFn: async (payload: any) => (await api.post('/sessions', payload)).data,
+  const createSession = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) =>
+      (await api.post('/sessions', payload)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      setOpen(false);
+      setSessionForm(null);
+    },
+  });
+  const updateSession = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      (await api.patch(`/sessions/${id}`, data)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setSessionForm(null);
+    },
+  });
+  const deleteSession = useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/sessions/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setPreview(null);
     },
   });
 
-  const createOther = useMutation({
-    mutationFn: async (payload: any) => (await api.post('/sessions', payload)).data,
+  const updateModule = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      (await api.patch(`/group-modules/${id}`, data)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      setOtherOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['group-modules'] });
+      setModuleForm(null);
+    },
+  });
+  const deleteModule = useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/group-modules/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group-modules'] });
+      setPreview(null);
     },
   });
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    create.mutate({
-      groupId: form.get('groupId'),
-      groupModuleId: form.get('groupModuleId'),
-      date: form.get('date'),
-      startTime: form.get('startTime') || undefined,
-      endTime: form.get('endTime') || undefined,
-      place: form.get('place') || undefined,
+  const updateEvent = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      (await api.patch(`/events/${id}`, data)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setEventForm(null);
+    },
+  });
+  const deleteEvent = useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/events/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setPreview(null);
+    },
+  });
+
+  function openItem(item: CalendarItem) {
+    setSelectedDay(null);
+    setPreview(item);
+  }
+
+  function openNewSession(variant: SessionVariant, day?: Date | null) {
+    setSelectedDay(null);
+    setSessionForm({
+      mode: 'create',
+      variant,
+      defaultDate: day ? format(day, 'yyyy-MM-dd') : undefined,
     });
   }
 
-  function handleOtherSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const eventId = form.get('oneDayEventId');
-    createOther.mutate({
-      title: form.get('title'),
-      date: form.get('date'),
-      startTime: form.get('startTime') || undefined,
-      endTime: form.get('endTime') || undefined,
-      place: form.get('place') || undefined,
-      notes: form.get('notes') || undefined,
-      oneDayEventId: eventId && eventId !== '' ? eventId : undefined,
-    });
+  function startEdit(item: CalendarItem) {
+    setPreview(null);
+    if (item.kind === 'module' && item.module) {
+      setModuleForm(item.module);
+    } else if (item.kind === 'event' && item.event) {
+      setEventForm(item.event);
+    } else if (item.session) {
+      setSessionForm({
+        mode: 'edit',
+        variant: item.kind === 'other' ? 'other' : 'regular',
+        session: item.session,
+      });
+    }
+  }
+
+  function confirmDelete(item: CalendarItem) {
+    if (!confirm(`¿Eliminar "${item.title}"?`)) return;
+    if (item.kind === 'module') deleteModule.mutate(item.id);
+    else if (item.kind === 'event') deleteEvent.mutate(item.id);
+    else deleteSession.mutate(item.id);
+  }
+
+  function submitSessionForm(payload: Record<string, unknown>) {
+    if (!sessionForm) return;
+    if (sessionForm.mode === 'create') createSession.mutate(payload);
+    else if (sessionForm.session)
+      updateSession.mutate({ id: sessionForm.session.id, data: payload });
   }
 
   const upcoming = [...sessions]
@@ -136,14 +194,14 @@ export function CalendarPage() {
     <div>
       <PageHeader
         title="Calendario"
-        subtitle="Sesiones de clase por grupo y módulo"
+        subtitle="Sesiones, módulos y constelaciones"
         action={
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" onClick={() => setOpen(true)}>
+            <button className="btn-primary" onClick={() => openNewSession('regular')}>
               <Plus size={16} /> Nueva sesión
             </button>
-            <button className="btn-ghost" onClick={() => setOtherOpen(true)}>
-              <Sparkles size={16} /> Agregar otro tipo de sesión
+            <button className="btn-ghost" onClick={() => openNewSession('other')}>
+              <Sparkles size={16} /> Otro tipo de sesión
             </button>
           </div>
         }
@@ -151,7 +209,7 @@ export function CalendarPage() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
         <div className="card overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted">
                 {format(cursor, 'yyyy', { locale: es })}
@@ -192,145 +250,44 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-line bg-canvas/60">
-            {WEEKDAYS.map((d, i) => (
-              <div
-                key={d}
+          <div className="flex items-center gap-1 border-b border-line p-2 lg:hidden">
+            {(['agenda', 'month'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setMobileView(mode)}
                 className={clsx(
-                  'py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide',
-                  i >= 5 ? 'text-muted/70' : 'text-muted',
+                  'flex-1 rounded-md py-1.5 text-sm font-medium transition-colors',
+                  mobileView === mode
+                    ? 'bg-petrol-600 text-white'
+                    : 'text-muted hover:bg-canvas hover:text-ink',
                 )}
               >
-                {d}
-              </div>
+                {mode === 'agenda' ? 'Agenda' : 'Mes'}
+              </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-7">
-            {days.map((day) => {
-              const daySessions = sessions.filter((s) => isSameDay(new Date(s.date), day));
-              const dayModules = moduleDates.filter((m) => isSameDay(new Date(m.date!), day));
-              const inMonth = isSameMonth(day, cursor);
-              const todayCell = isToday(day);
-              const weekend = isWeekend(day);
-              const overflow = daySessions.length - MAX_VISIBLE_SESSIONS;
+          <div className={clsx('lg:hidden', mobileView === 'agenda' ? 'block' : 'hidden')}>
+            <CalendarAgenda
+              cursor={cursor}
+              items={items}
+              onSelectDay={setSelectedDay}
+              onSelectItem={openItem}
+            />
+          </div>
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={clsx(
-                    'group relative min-h-[96px] border-b border-r border-line p-2 transition-colors last:border-r-0',
-                    !inMonth && 'bg-canvas/40',
-                    inMonth && weekend && 'bg-canvas/30',
-                    inMonth && !weekend && 'bg-surface',
-                    'hover:bg-petrol-50/40 dark:hover:bg-petrol-900/20',
-                  )}
-                >
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span
-                      className={clsx(
-                        'inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium transition-colors',
-                        todayCell && 'bg-petrol-600 text-white shadow-sm',
-                        !todayCell && inMonth && 'text-ink group-hover:text-petrol-700',
-                        !todayCell && !inMonth && 'text-muted/50',
-                      )}
-                    >
-                      {format(day, 'd')}
-                    </span>
-                    {daySessions.length + dayModules.length > 0 && inMonth && (
-                      <span className="rounded-full bg-lavender-100 px-1.5 py-0.5 text-[10px] font-semibold text-lavender-700 dark:bg-lavender-900/50 dark:text-lavender-200">
-                        {daySessions.length + dayModules.length}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    {daySessions.slice(0, MAX_VISIBLE_SESSIONS).map((s) => {
-                      const other = isOtherSession(s);
-                      const subtitle = sessionSubtitle(s);
-                      return (
-                      <Link
-                        key={s.id}
-                        to={`/sessions/${s.id}`}
-                        className={clsx(
-                          'group/event flex items-start gap-1.5 rounded-md px-1.5 py-1 transition-colors',
-                          other
-                            ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/25 dark:hover:bg-amber-900/40'
-                            : 'bg-lavender-50 hover:bg-lavender-100 dark:bg-lavender-900/30 dark:hover:bg-lavender-900/50',
-                        )}
-                        title={subtitle ? `${sessionLabel(s)} · ${subtitle}` : sessionLabel(s)}
-                      >
-                        <span
-                          className={clsx(
-                            'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-                            other ? 'bg-gold-500' : 'bg-lavender-500',
-                          )}
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span
-                            className={clsx(
-                              'block truncate text-[11px] font-medium leading-tight',
-                              other
-                                ? 'text-amber-900 dark:text-amber-100'
-                                : 'text-lavender-900 dark:text-lavender-100',
-                            )}
-                          >
-                            {sessionLabel(s)}
-                          </span>
-                          {s.startTime && (
-                            <span
-                              className={clsx(
-                                'block truncate text-[10px]',
-                                other
-                                  ? 'text-amber-700/80 dark:text-amber-300/70'
-                                  : 'text-lavender-600/80 dark:text-lavender-300/70',
-                              )}
-                            >
-                              {s.startTime}
-                            </span>
-                          )}
-                        </span>
-                      </Link>
-                    );
-                    })}
-                    {overflow > 0 && (
-                      <p className="px-1 text-[10px] font-medium text-muted">
-                        +{overflow} más
-                      </p>
-                    )}
-                    {dayModules.slice(0, MAX_VISIBLE_SESSIONS).map((m) => (
-                      <Link
-                        key={m.id}
-                        to={`/groups/${m.groupId}?tab=modules`}
-                        className="group/event flex items-start gap-1.5 rounded-md bg-emerald-50 px-1.5 py-1 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/25 dark:hover:bg-emerald-900/40"
-                        title={`${m.group?.name ?? ''} · ${m.name}`}
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[11px] font-medium leading-tight text-emerald-900 dark:text-emerald-100">
-                            {m.name}
-                          </span>
-                          {m.group?.name && (
-                            <span className="block truncate text-[10px] text-emerald-700/80 dark:text-emerald-300/70">
-                              {m.group.name}
-                            </span>
-                          )}
-                        </span>
-                      </Link>
-                    ))}
-                    {dayModules.length > MAX_VISIBLE_SESSIONS && (
-                      <p className="px-1 text-[10px] font-medium text-muted">
-                        +{dayModules.length - MAX_VISIBLE_SESSIONS} módulos
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className={clsx('lg:block', mobileView === 'month' ? 'block' : 'hidden')}>
+            <CalendarMonthGrid
+              cursor={cursor}
+              items={items}
+              onSelectDay={setSelectedDay}
+              onSelectItem={openItem}
+            />
           </div>
         </div>
 
-        <div className="card flex flex-col p-0">
+        <div className="card hidden flex-col p-0 lg:flex">
           <div className="flex items-center gap-2.5 border-b border-line px-5 py-4">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-petrol-50 text-petrol-600 dark:bg-petrol-900/50 dark:text-lavender-200">
               <CalendarDays size={18} />
@@ -353,7 +310,6 @@ export function CalendarPage() {
                 {upcoming.map((s, i) => {
                   const sessionDate = new Date(s.date);
                   const isNext = i === 0;
-
                   return (
                     <li key={s.id}>
                       <Link
@@ -394,9 +350,7 @@ export function CalendarPage() {
                                   {s.endTime ? ` – ${s.endTime}` : ''}
                                 </span>
                               )}
-                              {s.place && (
-                                <span className="truncate">{s.place}</span>
-                              )}
+                              {s.place && <span className="truncate">{s.place}</span>}
                             </div>
                           )}
                         </div>
@@ -410,95 +364,60 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <Modal open={open} title="Nueva sesión" onClose={() => { setOpen(false); setSelectedGroupId(''); }}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Grupo">
-            <Select
-              name="groupId"
-              required
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-            >
-              <option value="" disabled>Selecciona</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Módulo">
-            <Select name="groupModuleId" required defaultValue="" disabled={!selectedGroupId}>
-              <option value="" disabled>{selectedGroupId ? 'Selecciona' : 'Elige un grupo primero'}</option>
-              {modules.map((m) => (
-                <option key={m.id} value={m.id}>{m.moduleNumber}. {m.name}</option>
-              ))}
-            </Select>
-          </Field>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Fecha">
-              <Input name="date" type="date" required />
-            </Field>
-            <Field label="Inicio">
-              <Input name="startTime" type="time" />
-            </Field>
-            <Field label="Fin">
-              <Input name="endTime" type="time" />
-            </Field>
-          </div>
-          <Field label="Lugar">
-            <Input name="place" placeholder="Salón A" />
-          </Field>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={create.isPending}>
-              {create.isPending ? 'Guardando...' : 'Crear sesión'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {selectedDay && (
+        <DaySheet
+          day={selectedDay}
+          items={itemsForDay(items, selectedDay)}
+          onSelectItem={openItem}
+          onNewSession={() => openNewSession('regular', selectedDay)}
+          onNewOther={() => openNewSession('other', selectedDay)}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
 
-      <Modal open={otherOpen} title="Agregar otro tipo de sesión" onClose={() => setOtherOpen(false)}>
-        <form onSubmit={handleOtherSubmit} className="space-y-4">
-          <p className="text-sm text-muted">
-            Para actividades que no son clase de formación: constelaciones, talleres especiales u otros eventos.
-          </p>
-          <Field label="Título">
-            <Input name="title" required placeholder="Ej: Constelación, taller especial, evento" />
-          </Field>
-          <Field label="Relacionar a una constelación (opcional)">
-            <Select name="oneDayEventId" defaultValue="">
-              <option value="">Ninguna</option>
-              {oneDayEvents.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  {formatDate(ev.date)} — {ev.title}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Fecha">
-              <Input name="date" type="date" required />
-            </Field>
-            <Field label="Inicio">
-              <Input name="startTime" type="time" />
-            </Field>
-            <Field label="Fin">
-              <Input name="endTime" type="time" />
-            </Field>
-          </div>
-          <Field label="Lugar">
-            <Input name="place" placeholder="Salón A" />
-          </Field>
-          <Field label="Observaciones">
-            <Textarea name="notes" />
-          </Field>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" className="btn-ghost" onClick={() => setOtherOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={createOther.isPending}>
-              {createOther.isPending ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {preview && (
+        <CalendarItemPreview
+          item={preview}
+          isAdmin={isAdmin}
+          onEdit={() => startEdit(preview)}
+          onDelete={() => confirmDelete(preview)}
+          onClose={() => setPreview(null)}
+        />
+      )}
+
+      {sessionForm && (
+        <SessionFormModal
+          open
+          mode={sessionForm.mode}
+          variant={sessionForm.variant}
+          session={sessionForm.session}
+          defaultDate={sessionForm.defaultDate}
+          groups={groups}
+          oneDayEvents={oneDayEvents}
+          isPending={createSession.isPending || updateSession.isPending}
+          onSubmit={submitSessionForm}
+          onClose={() => setSessionForm(null)}
+        />
+      )}
+
+      <ModuleFormModal
+        open={!!moduleForm}
+        module={moduleForm}
+        isPending={updateModule.isPending}
+        onSubmit={(data) => moduleForm && updateModule.mutate({ id: moduleForm.id, data })}
+        onClearDate={() =>
+          moduleForm && updateModule.mutate({ id: moduleForm.id, data: { date: null } })
+        }
+        onClose={() => setModuleForm(null)}
+      />
+
+      <EventFormModal
+        open={!!eventForm}
+        event={eventForm}
+        isPending={updateEvent.isPending}
+        onSubmit={(data) => eventForm && updateEvent.mutate({ id: eventForm.id, data })}
+        onClose={() => setEventForm(null)}
+      />
     </div>
   );
 }

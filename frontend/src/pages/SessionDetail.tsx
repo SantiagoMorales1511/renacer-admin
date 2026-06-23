@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Select } from '../components/ui/Form';
 import { Table, Td } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
+import { useAuth } from '../store/auth';
+import { SessionFormModal } from '../components/calendar/SessionFormModal';
 import { formatDate, sessionLabel, sessionSubtitle } from '../utils/format';
-import type { AttendanceStatus } from '../types';
+import type { AttendanceStatus, Group, OneDayEvent } from '../types';
 
 interface Row {
   studentId: string;
@@ -17,12 +20,25 @@ interface Row {
 
 export function SessionDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [rows, setRows] = useState<Row[]>([]);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['session', id],
     queryFn: async () => (await api.get(`/sessions/${id}`)).data,
+  });
+
+  const { data: groups = [] } = useQuery({
+    queryKey: ['groups'],
+    queryFn: async () => (await api.get<Group[]>('/groups')).data,
+  });
+  const { data: oneDayEvents = [] } = useQuery({
+    queryKey: ['events'],
+    queryFn: async () => (await api.get<OneDayEvent[]>('/events')).data,
   });
 
   const isOther = !!data && !data.groupId && !!data.title;
@@ -65,6 +81,24 @@ export function SessionDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['session', id] }),
   });
 
+  const updateSession = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) =>
+      (await api.patch(`/sessions/${id}`, payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', id] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setEditOpen(false);
+    },
+  });
+
+  const removeSession = useMutation({
+    mutationFn: async () => (await api.delete(`/sessions/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      navigate('/calendar');
+    },
+  });
+
   if (isLoading || !data) return <p className="text-muted">Cargando...</p>;
 
   function setRow(studentId: string, patch: Partial<Row>) {
@@ -80,15 +114,30 @@ export function SessionDetailPage() {
         title={pageTitle}
         subtitle={formatDate(data.date)}
         action={
-          <Select
-            value={data.status}
-            onChange={(e) => updateStatus.mutate(e.target.value)}
-            className="w-40"
-          >
-            <option value="SCHEDULED">Programada</option>
-            <option value="DONE">Realizada</option>
-            <option value="CANCELLED">Cancelada</option>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={data.status}
+              onChange={(e) => updateStatus.mutate(e.target.value)}
+              className="w-40"
+            >
+              <option value="SCHEDULED">Programada</option>
+              <option value="DONE">Realizada</option>
+              <option value="CANCELLED">Cancelada</option>
+            </Select>
+            <button className="btn-ghost" onClick={() => setEditOpen(true)}>
+              <Pencil size={16} /> Editar
+            </button>
+            {isAdmin && (
+              <button
+                className="btn-ghost text-red-600"
+                onClick={() => {
+                  if (confirm('¿Eliminar esta sesión?')) removeSession.mutate();
+                }}
+              >
+                <Trash2 size={16} /> Eliminar
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -156,6 +205,18 @@ export function SessionDetailPage() {
           {save.isSuccess && <p className="mt-2 text-sm text-emerald-600">Asistencia guardada.</p>}
         </>
       )}
+
+      <SessionFormModal
+        open={editOpen}
+        mode="edit"
+        variant={isOther ? 'other' : 'regular'}
+        session={data}
+        groups={groups}
+        oneDayEvents={oneDayEvents}
+        isPending={updateSession.isPending}
+        onSubmit={(payload) => updateSession.mutate(payload)}
+        onClose={() => setEditOpen(false)}
+      />
     </div>
   );
 }
