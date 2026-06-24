@@ -174,6 +174,6 @@ export interface AttendanceMatrix {
   rows: {
     studentId: string;
     fullName: string;
-    cells: { moduleId: string; status: AttendanceMatrixStatus }[];
+    cells: { moduleId: string; status: AttendanceMatrixStatus; attendance: AttendanceStatus | null }[];
   }[];
 }

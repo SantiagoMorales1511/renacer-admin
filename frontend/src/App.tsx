@@ -77,7 +77,14 @@ export default function App() {
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/cartera" element={<CarteraPage />} />
         <Route path="/daily-cash" element={<DailyCashPage />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route
+          path="/expenses"
+          element={
+            <ProtectedRoute permission="canRegisterExpenses">
+              <ExpensesPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/cash-flow"
           element={

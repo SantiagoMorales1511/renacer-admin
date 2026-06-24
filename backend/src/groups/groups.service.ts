@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus, ProgramType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseDateOnly } from '../common/date.util';
 import { CreateGroupDto, UpdateGroupDto } from './dto/group.dto';
+import { SaveMatrixAttendanceDto } from './dto/matrix-attendance.dto';
 
 export type MatrixCellStatus =
   | 'ASISTIO_PAGO'
@@ -91,13 +92,17 @@ export class GroupsService {
     const rows = group.students.map((student) => ({
       studentId: student.id,
       fullName: student.fullName,
-      cells: modules.map((m) => ({
-        moduleId: m.id,
-        status: this.resolveMatrixCellStatus({
-          attendance: attendanceByStudent.get(student.id)?.get(m.id),
-          paid: (paymentByStudentModule.get(`${student.id}:${m.id}`) ?? 0) >= m.price && m.price > 0,
-        }),
-      })),
+      cells: modules.map((m) => {
+        const attendance = attendanceByStudent.get(student.id)?.get(m.id) ?? null;
+        return {
+          moduleId: m.id,
+          attendance,
+          status: this.resolveMatrixCellStatus({
+            attendance: attendance ?? undefined,
+            paid: (paymentByStudentModule.get(`${student.id}:${m.id}`) ?? 0) >= m.price && m.price > 0,
+          }),
+        };
+      }),
     }));
 
     return {
@@ -105,6 +110,74 @@ export class GroupsService {
       modules: modules.map((m) => ({ id: m.id, number: m.moduleNumber, name: m.name })),
       rows,
     };
+  }
+
+  async saveMatrixAttendance(groupId: string, dto: SaveMatrixAttendanceDto, userId: string) {
+    const student = await this.prisma.student.findFirst({
+      where: { id: dto.studentId, groupId },
+    });
+    if (!student) {
+      throw new BadRequestException('El estudiante no pertenece a este grupo');
+    }
+
+    const groupModule = await this.prisma.groupModule.findFirst({
+      where: { id: dto.groupModuleId, groupId },
+    });
+    if (!groupModule) {
+      throw new BadRequestException('El módulo no pertenece a este grupo');
+    }
+
+    let sessions = await this.prisma.classSession.findMany({
+      where: { groupId, groupModuleId: dto.groupModuleId },
+    });
+
+    if (dto.status != null && sessions.length === 0) {
+      const session = await this.prisma.classSession.create({
+        data: {
+          groupId,
+          groupModuleId: dto.groupModuleId,
+          date: groupModule.date ?? new Date(),
+          status: 'DONE',
+        },
+      });
+      sessions = [session];
+    }
+
+    const sessionIds = sessions.map((s) => s.id);
+
+    if (dto.status == null) {
+      if (sessionIds.length > 0) {
+        await this.prisma.attendance.deleteMany({
+          where: {
+            studentId: dto.studentId,
+            sessionId: { in: sessionIds },
+          },
+        });
+      }
+      return this.attendanceMatrix(groupId);
+    }
+
+    await this.prisma.$transaction(
+      sessionIds.map((sessionId) =>
+        this.prisma.attendance.upsert({
+          where: {
+            sessionId_studentId: { sessionId, studentId: dto.studentId },
+          },
+          update: {
+            status: dto.status!,
+            registeredById: userId,
+          },
+          create: {
+            sessionId,
+            studentId: dto.studentId,
+            status: dto.status!,
+            registeredById: userId,
+          },
+        }),
+      ),
+    );
+
+    return this.attendanceMatrix(groupId);
   }
 
   private resolveMatrixCellStatus(params: {

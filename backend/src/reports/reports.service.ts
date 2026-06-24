@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { moduleBalance } from '../common/module-balance.util';
 
 function startOfDay(d = new Date()) {
   const x = new Date(d);
@@ -41,11 +42,7 @@ export class ReportsService {
     return res._sum.amount ?? 0;
   }
 
-  // Un estudiante adeuda un módulo SOLO si:
-  //  1. asistió al módulo (al menos una sesión PRESENT), y
-  //  2. el módulo ya se dictó (su fecha llegó), y
-  //  3. lo pagado para ese módulo no cubre el precio.
-  // Si no asistió, o el módulo aún no se ha dictado, no hay deuda.
+  // Deuda visible si hay saldo pendiente y (hay abono vinculado al módulo o asistió y ya se dictó).
   private async studentModuleBalances() {
     const now = new Date();
     const [students, groupModules, payments, attendances] = await Promise.all([
@@ -85,8 +82,7 @@ export class ReportsService {
         const paid = paidByStudentModule.get(key) ?? 0;
         const dictated = m.date ? m.date <= now : true;
         const attended = attendedKey.has(key);
-        const owes = dictated && attended && m.price > 0;
-        const balance = owes ? Math.max(m.price - paid, 0) : 0;
+        const { balance } = moduleBalance({ price: m.price, paid, attended, dictated });
         return {
           moduleId: m.id,
           moduleNumber: m.moduleNumber,

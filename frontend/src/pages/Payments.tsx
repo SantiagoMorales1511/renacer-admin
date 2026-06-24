@@ -20,6 +20,7 @@ export function PaymentsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedModuleId, setSelectedModuleId] = useState('');
   const [editing, setEditing] = useState<Payment | null>(null);
   const [editStudentId, setEditStudentId] = useState('');
 
@@ -41,6 +42,16 @@ export function PaymentsPage() {
     enabled: !!selectedGroupId,
   });
 
+  const { data: studentDetail } = useQuery({
+    queryKey: ['student', selectedStudentId],
+    queryFn: async () => (await api.get(`/students/${selectedStudentId}`)).data,
+    enabled: !!selectedStudentId && open,
+  });
+
+  const selectedModuleSummary = studentDetail?.moduleSummary?.find(
+    (m: { moduleId: string }) => m.moduleId === selectedModuleId,
+  );
+
   const editGroupId = students.find((s) => s.id === editStudentId)?.groupId ?? '';
   const { data: editModules = [] } = useQuery({
     queryKey: ['group', editGroupId, 'modules'],
@@ -57,7 +68,9 @@ export function PaymentsPage() {
     mutationFn: async (payload: any) => (await api.post('/payments', payload)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['cartera'] });
       setOpen(false);
+      setSelectedModuleId('');
     },
   });
 
@@ -259,14 +272,23 @@ export function PaymentsPage() {
                 <Combobox
                   options={students.map((s) => ({ value: s.id, label: s.fullName }))}
                   value={selectedStudentId}
-                  onChange={setSelectedStudentId}
+                  onChange={(id) => {
+                    setSelectedStudentId(id);
+                    setSelectedModuleId('');
+                  }}
                   placeholder="Selecciona"
                   searchPlaceholder="Escribe el nombre del estudiante..."
                   emptyText="No se encontró ningún estudiante"
                 />
               </Field>
               <Field label="Módulo">
-                <Select name="groupModuleId" required defaultValue="" disabled={!selectedGroupId}>
+                <Select
+                  name="groupModuleId"
+                  required
+                  value={selectedModuleId}
+                  onChange={(e) => setSelectedModuleId(e.target.value)}
+                  disabled={!selectedGroupId}
+                >
                   <option value="" disabled>
                     {!selectedStudentId ? 'Elige un estudiante primero' : selectedGroupId ? 'Selecciona' : 'El estudiante no tiene grupo'}
                   </option>
@@ -275,6 +297,14 @@ export function PaymentsPage() {
                   ))}
                 </Select>
               </Field>
+              {selectedModuleSummary && (
+                <p className="text-sm text-muted">
+                  Precio: {money(selectedModuleSummary.baseValue)} · Pagado: {money(selectedModuleSummary.paid)} · Saldo:{' '}
+                  <span className={selectedModuleSummary.balance > 0 ? 'font-medium text-red-600' : ''}>
+                    {money(selectedModuleSummary.balance)}
+                  </span>
+                </p>
+              )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Valor">
                   <Input name="amount" type="number" min={1} required />

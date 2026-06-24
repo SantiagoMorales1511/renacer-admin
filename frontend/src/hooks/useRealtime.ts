@@ -7,7 +7,7 @@ const EVENT_QUERY_MAP: Record<string, string[]> = {
   payment_created: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
   payment_updated: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
   payment_deleted: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
-  attendance_updated: ['session', 'assistant-home', 'student', 'reports', 'cartera'],
+  attendance_updated: ['session', 'assistant-home', 'student', 'reports', 'cartera', 'group'],
   student_created: ['students', 'dashboard', 'assistant-home', 'group'],
   group_created: ['groups', 'dashboard'],
   expense_created: ['expenses', 'dashboard', 'cash-flow', 'reports'],

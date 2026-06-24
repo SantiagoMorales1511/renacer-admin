@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { GroupsService } from './groups.service';
 import { GroupModulesService } from '../group-modules/group-modules.service';
 import { CreateGroupDto, UpdateGroupDto } from './dto/group.dto';
+import { SaveMatrixAttendanceDto } from './dto/matrix-attendance.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -38,6 +39,24 @@ export class GroupsController {
   @Get(':id/attendance-matrix')
   attendanceMatrix(@Param('id') id: string) {
     return this.groupsService.attendanceMatrix(id);
+  }
+
+  @Patch(':id/attendance-matrix')
+  @Roles(Role.ASSISTANT)
+  async saveMatrixAttendance(
+    @Param('id') id: string,
+    @Body() dto: SaveMatrixAttendanceDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    const result = await this.groupsService.saveMatrixAttendance(id, dto, user.id);
+    await this.audit.log({
+      userId: user.id,
+      action: 'save',
+      entity: 'attendance',
+      entityId: `${dto.studentId}:${dto.groupModuleId}`,
+    });
+    this.events.emit('attendance_updated', { groupId: id });
+    return result;
   }
 
   @Post()

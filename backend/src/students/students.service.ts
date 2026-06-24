@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { moduleBalance } from '../common/module-balance.util';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
 
 @Injectable()
@@ -54,9 +55,7 @@ export class StudentsService {
         .reduce((sum, p) => sum + p.amount, 0);
       const attended = attendedModuleIds.has(m.id);
       const dictated = m.date ? m.date <= now : true;
-      // Solo se adeuda si el módulo ya se dictó y el estudiante asistió.
-      const owes = attended && dictated && m.price > 0;
-      const balance = owes ? Math.max(m.price - paid, 0) : 0;
+      const { balance } = moduleBalance({ price: m.price, paid, attended, dictated });
       return {
         moduleId: m.id,
         number: m.moduleNumber,

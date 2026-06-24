@@ -11,12 +11,19 @@ import type { Expense, Group } from '../types';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+function expenseError(err: unknown) {
+  const e = err as { response?: { data?: { message?: string } } };
+  return e?.response?.data?.message ?? 'No se pudo completar la operación.';
+}
+
 export function ExpensesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [successMsg, setSuccessMsg] = useState('');
   const isAdmin = user?.role === 'ADMIN';
+  const canRegister = isAdmin || !!user?.canRegisterExpenses;
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
@@ -29,26 +36,37 @@ export function ExpensesPage() {
     queryFn: async () => (await api.get<Group[]>('/groups')).data,
   });
 
+  function invalidateExpenseQueries() {
+    queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['cash-flow'] });
+    queryClient.invalidateQueries({ queryKey: ['reports'] });
+  }
+
   const create = useMutation({
     mutationFn: async (payload: any) => (await api.post('/expenses', payload)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      invalidateExpenseQueries();
       setOpen(false);
+      setSuccessMsg('Gasto registrado correctamente.');
     },
+    onError: (err) => alert(expenseError(err)),
   });
 
   const update = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) =>
       (await api.patch(`/expenses/${id}`, data)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      invalidateExpenseQueries();
       setEditing(null);
     },
+    onError: (err) => alert(expenseError(err)),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => (await api.delete(`/expenses/${id}`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expenses'] }),
+    onSuccess: () => invalidateExpenseQueries(),
+    onError: (err) => alert(expenseError(err)),
   });
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -88,11 +106,19 @@ export function ExpensesPage() {
         title="Gastos"
         subtitle="Registro de egresos operativos"
         action={
-          <button className="btn-primary" onClick={() => setOpen(true)}>
-            <Plus size={16} /> Nuevo gasto
-          </button>
+          canRegister ? (
+            <button className="btn-primary" onClick={() => setOpen(true)}>
+              <Plus size={16} /> Nuevo gasto
+            </button>
+          ) : undefined
         }
       />
+
+      {successMsg && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {successMsg}
+        </div>
+      )}
 
       {isAdmin ? (
         <>

@@ -17,7 +17,7 @@ import {
   ATTENDANCE_MATRIX_LABELS,
   MODULE_STATUS_LABELS,
 } from '../utils/format';
-import type { AttendanceMatrix, AttendanceMatrixStatus, GroupModule } from '../types';
+import type { AttendanceMatrix, AttendanceMatrixStatus, AttendanceStatus, GroupModule } from '../types';
 
 type Tab = 'summary' | 'modules' | 'matrix';
 
@@ -371,11 +371,39 @@ const MATRIX_LEGEND: AttendanceMatrixStatus[] = [
 ];
 
 function AttendanceMatrixView({ groupId }: { groupId: string }) {
+  const queryClient = useQueryClient();
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ['group', groupId, 'attendance-matrix'],
     queryFn: async () =>
       (await api.get<AttendanceMatrix>(`/groups/${groupId}/attendance-matrix`)).data,
   });
+
+  const saveCell = useMutation({
+    mutationFn: async (payload: {
+      studentId: string;
+      groupModuleId: string;
+      status: AttendanceStatus | null;
+    }) => (await api.patch(`/groups/${groupId}/attendance-matrix`, payload)).data,
+    onMutate: (vars) => setSavingKey(`${vars.studentId}:${vars.groupModuleId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId, 'attendance-matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['cartera'] });
+    },
+    onSettled: () => setSavingKey(null),
+    onError: (err: any) => {
+      alert(err?.response?.data?.message ?? 'No se pudo guardar la asistencia.');
+    },
+  });
+
+  function handleCellChange(
+    studentId: string,
+    moduleId: string,
+    status: AttendanceStatus | null,
+  ) {
+    saveCell.mutate({ studentId, groupModuleId: moduleId, status });
+  }
 
   if (isLoading || !data) return <p className="text-muted">Cargando...</p>;
 
@@ -432,15 +460,11 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
                 </td>
                 {row.cells.map((cell) => (
                   <td key={cell.moduleId} className="px-3 py-2.5 text-center">
-                    <span
-                      className={clsx(
-                        'inline-flex min-w-[140px] justify-center rounded-md px-2 py-1 text-xs font-medium',
-                        CELL_STYLES[cell.status],
-                        cell.status === 'SIN_REGISTRO' && 'bg-canvas',
-                      )}
-                    >
-                      {ATTENDANCE_MATRIX_LABELS[cell.status]}
-                    </span>
+                    <MatrixCellSelect
+                      cell={cell}
+                      saving={savingKey === `${row.studentId}:${cell.moduleId}`}
+                      onChange={(status) => handleCellChange(row.studentId, cell.moduleId, status)}
+                    />
                   </td>
                 ))}
               </tr>
@@ -469,15 +493,11 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
                       <span className="min-w-0 truncate text-muted">
                         M{m?.number} {m?.name ? `· ${m.name}` : ''}
                       </span>
-                      <span
-                        className={clsx(
-                          'inline-flex shrink-0 justify-center rounded-md px-2 py-1 text-xs font-medium',
-                          CELL_STYLES[cell.status],
-                          cell.status === 'SIN_REGISTRO' && 'bg-canvas',
-                        )}
-                      >
-                        {ATTENDANCE_MATRIX_LABELS[cell.status]}
-                      </span>
+                      <MatrixCellSelect
+                        cell={cell}
+                        saving={savingKey === `${row.studentId}:${cell.moduleId}`}
+                        onChange={(status) => handleCellChange(row.studentId, cell.moduleId, status)}
+                      />
                     </li>
                   );
                 })}
@@ -487,5 +507,36 @@ function AttendanceMatrixView({ groupId }: { groupId: string }) {
         })}
       </div>
     </div>
+  );
+}
+
+function MatrixCellSelect({
+  cell,
+  saving,
+  onChange,
+}: {
+  cell: { status: AttendanceMatrixStatus; attendance: AttendanceStatus | null };
+  saving: boolean;
+  onChange: (status: AttendanceStatus | null) => void;
+}) {
+  return (
+    <select
+      value={cell.attendance ?? ''}
+      disabled={saving}
+      onChange={(e) => {
+        const v = e.target.value;
+        onChange(v === '' ? null : (v as AttendanceStatus));
+      }}
+      className={clsx(
+        'min-w-[120px] cursor-pointer rounded-md border-0 px-2 py-1 text-xs font-medium lg:min-w-[140px]',
+        CELL_STYLES[cell.status],
+        cell.status === 'SIN_REGISTRO' && 'bg-canvas',
+        saving && 'opacity-50',
+      )}
+    >
+      <option value="">Sin registro</option>
+      <option value="PRESENT">Asistió</option>
+      <option value="ABSENT">No asistió</option>
+    </select>
   );
 }
