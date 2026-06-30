@@ -29,17 +29,17 @@ export function StatTile({
 
   const tintClass =
     accent === 'sky'
-      ? 'from-sky-50/90 to-transparent dark:from-sky-500/10 dark:to-transparent'
+      ? 'from-sky-50/90 to-transparent dark:from-transparent dark:to-transparent'
       : accent === 'gold'
-        ? 'from-amber-50/80 to-transparent dark:from-gold-500/10 dark:to-transparent'
+        ? 'from-amber-50/80 to-transparent dark:from-transparent dark:to-transparent'
         : accent === 'red'
-          ? 'from-red-50/80 to-transparent dark:from-red-500/10 dark:to-transparent'
+          ? 'from-red-50/80 to-transparent dark:from-transparent dark:to-transparent'
           : accent === 'green'
-            ? 'from-emerald-50/80 to-transparent dark:from-emerald-500/10 dark:to-transparent'
-            : 'from-petrol-50/80 to-transparent dark:from-petrol-500/10 dark:to-transparent';
+            ? 'from-emerald-50/80 to-transparent dark:from-transparent dark:to-transparent'
+            : 'from-petrol-50/80 to-transparent dark:from-transparent dark:to-transparent';
 
   return (
-    <div className={clsx('card relative overflow-hidden p-5', `bg-gradient-to-br ${tintClass}`)}>
+    <div className={clsx('card relative overflow-hidden p-5 dark:bg-surface', `bg-gradient-to-br ${tintClass}`)}>
       <div
         className={clsx(
           'absolute left-0 top-0 h-full w-1 rounded-full',

@@ -12,12 +12,12 @@
 }
 
 .dark {
-  --canvas: 9 14 18;
-  --surface: 17 26 32;
-  --surface-tint: 20 30 38;
-  --line: 36 50 58;
-  --ink: 236 244 247;
-  --muted: 132 154 165;
+  --canvas: 13 13 17;
+  --surface: 24 24 31;
+  --surface-tint: 32 32 40;
+  --line: 44 44 54;
+  --ink: 245 245 250;
+  --muted: 139 139 158;
 }
 
 html,
@@ -36,18 +36,16 @@ body {
 }
 
 .dark body {
-  background-image:
-    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(47, 146, 159, 0.1), transparent 55%),
-    radial-gradient(ellipse 65% 50% at 100% 100%, rgba(47, 146, 159, 0.07), transparent 50%);
+  background-image: none;
 }
 
 @layer components {
   .card {
-    @apply rounded-card bg-surface shadow-card dark:shadow-card-dark;
+    @apply rounded-card bg-surface shadow-card dark:border dark:border-line/60 dark:shadow-card-dark;
   }
 
   .panel {
-    @apply rounded-panel bg-surface shadow-elevated dark:shadow-elevated-dark;
+    @apply rounded-panel bg-surface shadow-elevated dark:border dark:border-line/60 dark:shadow-elevated-dark;
   }
 
   .btn {
@@ -55,11 +53,11 @@ body {
   }
 
   .btn-primary {
-    @apply btn bg-petrol-600 text-white hover:bg-petrol-700 dark:bg-petrol-500 dark:hover:bg-petrol-400;
+    @apply btn bg-petrol-600 text-white hover:bg-petrol-700 dark:bg-petrol-500 dark:hover:bg-petrol-400 dark:text-white;
   }
 
   .btn-ghost {
-    @apply btn bg-petrol-50/50 text-ink hover:bg-petrol-100/70 dark:bg-line/10 dark:hover:bg-petrol-500/15;
+    @apply btn bg-petrol-50/50 text-ink hover:bg-petrol-100/70 dark:bg-surface-tint dark:hover:bg-line/30;
   }
 
   .btn-danger {
@@ -67,7 +65,7 @@ body {
   }
 
   .input {
-    @apply w-full rounded-lg border border-transparent bg-petrol-50/35 px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-petrol-400/25 focus:border-petrol-500 dark:bg-line/10 dark:placeholder:text-muted/70 dark:focus:border-petrol-400 dark:focus:ring-petrol-400/20;
+    @apply w-full rounded-lg border border-transparent bg-petrol-50/35 px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-petrol-400/25 focus:border-petrol-500 dark:border-line/40 dark:bg-surface-tint dark:placeholder:text-muted/70 dark:focus:border-petrol-400 dark:focus:ring-petrol-400/20;
   }
 
   .label {

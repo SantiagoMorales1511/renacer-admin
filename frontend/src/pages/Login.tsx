@@ -35,9 +35,9 @@ export function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-petrol-200/30 blur-3xl dark:bg-petrol-500/10" />
-        <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-petrol-200/20 blur-3xl dark:bg-petrol-500/8" />
-        <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-petrol-100/35 blur-3xl dark:bg-petrol-500/10" />
+        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-petrol-200/30 blur-3xl dark:hidden" />
+        <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-petrol-200/20 blur-3xl dark:hidden" />
+        <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-petrol-100/35 blur-3xl dark:hidden" />
       </div>
       <div className="relative w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
@@ -46,9 +46,9 @@ export function LoginPage() {
         </div>
         <form
           onSubmit={handleSubmit}
-          className="relative overflow-hidden rounded-panel bg-surface/90 p-6 shadow-elevated backdrop-blur-sm dark:bg-surface/95 dark:shadow-elevated-dark"
+          className="relative overflow-hidden rounded-panel bg-surface p-6 shadow-elevated dark:border dark:border-line/60 dark:shadow-elevated-dark"
         >
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-petrol-400 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-petrol-500" />
           <div className="space-y-4 pt-1">
           <Field label="Usuario">
             <Input

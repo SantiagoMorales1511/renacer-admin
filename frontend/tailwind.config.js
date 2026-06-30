@@ -64,8 +64,8 @@ export default {
       boxShadow: {
         card: '0 1px 3px rgba(45, 75, 115, 0.05), 0 4px 14px rgba(169, 183, 231, 0.1)',
         elevated: '0 2px 8px rgba(45, 75, 115, 0.07), 0 10px 28px rgba(169, 183, 231, 0.12)',
-        'card-dark': '0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(169, 183, 231, 0.06)',
-        'elevated-dark': '0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(47, 146, 159, 0.08)',
+        'card-dark': '0 1px 2px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+        'elevated-dark': '0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
       },
     },
   },

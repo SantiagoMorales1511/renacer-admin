@@ -36,24 +36,24 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen gap-3 overflow-hidden p-3">
-      <aside className="hidden w-60 shrink-0 overflow-hidden rounded-panel bg-brand-50/40 shadow-elevated dark:bg-brand-900/25 dark:shadow-elevated-dark lg:block">
+      <aside className="hidden w-60 shrink-0 overflow-hidden rounded-panel border border-line/50 bg-surface shadow-elevated dark:border-line/60 dark:bg-surface dark:shadow-elevated-dark lg:block">
         <Sidebar />
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-brand-900/40 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 rounded-r-panel bg-brand-50/40 shadow-elevated dark:bg-brand-900/25 dark:shadow-elevated-dark">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 h-full w-64 rounded-r-panel border-r border-line/50 bg-surface shadow-elevated dark:border-line/60 dark:bg-surface dark:shadow-elevated-dark">
             <Sidebar onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel border-b-2 border-petrol-200/60 bg-petrol-50/45 px-3 shadow-card backdrop-blur-sm dark:border-petrol-500/20 dark:bg-petrol-900/20 dark:shadow-card-dark sm:px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between rounded-panel border border-line/50 bg-surface px-3 shadow-card dark:border-line/60 dark:shadow-card-dark sm:px-4">
           <div className="flex items-center gap-2">
             <button
-              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15 lg:hidden"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-surface-tint lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menú"
             >
@@ -64,7 +64,7 @@ export function AppLayout() {
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={toggle}
-              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-surface-tint"
               title="Cambiar tema"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -77,7 +77,7 @@ export function AppLayout() {
             </div>
             <button
               onClick={logout}
-              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-petrol-500/15"
+              className="rounded-lg p-2 text-muted hover:bg-petrol-50/60 dark:hover:bg-surface-tint"
               title="Cerrar sesión"
             >
               <LogOut size={18} />
