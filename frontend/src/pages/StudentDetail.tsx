@@ -3,18 +3,30 @@ import { useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, MoneyInput, Select, Textarea } from '../components/ui/Form';
 import { Table, Td } from '../components/ui/Table';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { StatTile } from '../components/ui/Card';
-import { money, formatDate, formatDateTime, labelize, PAYMENT_METHODS } from '../utils/format';
+import {
+  money,
+  formatDate,
+  formatDateTime,
+  parseThousands,
+  paymentMethodLabel,
+  PAYMENT_METHODS,
+  PAYMENT_METHOD_LABELS,
+} from '../utils/format';
 
 export function StudentDetailPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [payOpen, setPayOpen] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [moduleId, setModuleId] = useState('');
+  const [method, setMethod] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['student', id],
@@ -25,7 +37,7 @@ export function StudentDetailPage() {
     mutationFn: async (payload: any) => (await api.post('/payments', payload)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', id] });
-      setPayOpen(false);
+      closePay();
     },
   });
 
@@ -34,14 +46,35 @@ export function StudentDetailPage() {
   function handlePay(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const value = parseThousands(amount);
+    const next: Record<string, string> = {};
+    if (!moduleId) next.module = 'Selecciona el módulo.';
+    if (!value) next.amount = 'Escribe el valor del pago.';
+    if (!method) next.method = 'Selecciona el método de pago.';
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+
     pay.mutate({
       studentId: id,
       groupId: data.groupId || undefined,
-      groupModuleId: form.get('groupModuleId'),
-      amount: Number(form.get('amount')),
-      method: form.get('method'),
+      groupModuleId: moduleId,
+      amount: value,
+      method,
       observation: form.get('observation') || undefined,
     });
+  }
+
+  function openPay() {
+    setModuleId('');
+    setAmount('');
+    setMethod('');
+    setErrors({});
+    setPayOpen(true);
+  }
+
+  function closePay() {
+    setPayOpen(false);
+    setErrors({});
   }
 
   return (
@@ -50,7 +83,7 @@ export function StudentDetailPage() {
         title={data.fullName}
         subtitle={data.group?.name ?? 'Sin grupo'}
         action={
-          <button className="btn-primary" onClick={() => setPayOpen(true)}>
+          <button className="btn-primary" onClick={openPay}>
             <Plus size={16} /> Registrar pago
           </button>
         }
@@ -100,7 +133,7 @@ export function StudentDetailPage() {
               <tr key={p.id}>
                 <Td>{formatDate(p.paidAt)}</Td>
                 <Td>{p.groupModule?.name}</Td>
-                <Td>{labelize(p.method)}</Td>
+                <Td>{paymentMethodLabel(p.method)}</Td>
                 <Td className="font-medium">{money(p.amount)}</Td>
               </tr>
             ))}
@@ -121,11 +154,17 @@ export function StudentDetailPage() {
         </div>
       </div>
 
-      <Modal open={payOpen} title="Registrar pago" onClose={() => setPayOpen(false)}>
+      <Modal open={payOpen} title="Registrar pago" onClose={closePay}>
         <form onSubmit={handlePay} className="space-y-4">
-          <Field label="Módulo">
-            <Select name="groupModuleId" required defaultValue="">
-              <option value="" disabled>Selecciona un módulo</option>
+          <Field label="Módulo" error={errors.module}>
+            <Select
+              value={moduleId}
+              onChange={(e) => {
+                setModuleId(e.target.value);
+                setErrors((prev) => ({ ...prev, module: '' }));
+              }}
+            >
+              <option value="">Selecciona un módulo</option>
               {data.moduleSummary.map((m: any) => (
                 <option key={m.moduleId} value={m.moduleId}>
                   {m.number}. {m.name} {m.balance > 0 ? `(saldo ${money(m.balance)})` : '(al día)'}
@@ -134,13 +173,27 @@ export function StudentDetailPage() {
             </Select>
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Valor">
-              <Input name="amount" type="number" min={1} required />
+            <Field label="Valor" error={errors.amount}>
+              <MoneyInput
+                value={amount}
+                onChange={(v) => {
+                  setAmount(v);
+                  setErrors((prev) => ({ ...prev, amount: '' }));
+                }}
+                placeholder="0"
+              />
             </Field>
-            <Field label="Método">
-              <Select name="method" defaultValue="EFECTIVO">
+            <Field label="Método" error={errors.method}>
+              <Select
+                value={method}
+                onChange={(e) => {
+                  setMethod(e.target.value);
+                  setErrors((prev) => ({ ...prev, method: '' }));
+                }}
+              >
+                <option value="">Selecciona</option>
                 {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>{labelize(m)}</option>
+                  <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
                 ))}
               </Select>
             </Field>
@@ -149,7 +202,7 @@ export function StudentDetailPage() {
             <Textarea name="observation" />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" className="btn-ghost" onClick={() => setPayOpen(false)}>Cancelar</button>
+            <button type="button" className="btn-ghost" onClick={closePay}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={pay.isPending}>
               {pay.isPending ? 'Guardando...' : 'Registrar'}
             </button>

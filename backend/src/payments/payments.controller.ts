@@ -49,10 +49,18 @@ export class PaymentsController {
   }
 
   @Post('receipt')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: RECEIPT_MAX_BYTES } }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: RECEIPT_MAX_BYTES },
+      fileFilter: (_req, file, cb) =>
+        file.mimetype?.startsWith('image/')
+          ? cb(null, true)
+          : cb(new BadRequestException('El comprobante debe ser una imagen'), false),
+    }),
+  )
   async uploadReceipt(@UploadedFile() file?: UploadedReceipt) {
     if (!file) {
-      throw new BadRequestException('No se recibió ningún archivo');
+      throw new BadRequestException('No se recibió ninguna imagen');
     }
     const stored = await this.receipts.save(file);
     return { receiptUrl: stored.key };

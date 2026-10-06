@@ -61,10 +61,8 @@ enum AttendanceStatus {
 enum PaymentMethod {
   EFECTIVO
   TRANSFERENCIA
-  TARJETA
   NEQUI
-  DAVIPLATA
-  OTRO
+  TARJETA
 }
 
 enum ExpenseCategory {

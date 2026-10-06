@@ -27,13 +27,7 @@ export type StudentStatus = 'ACTIVE' | 'PAUSED' | 'WITHDRAWN' | 'FINISHED';
 export type ModuleStatus = 'ACTIVE' | 'INACTIVE';
 export type SessionStatus = 'SCHEDULED' | 'DONE' | 'CANCELLED';
 export type AttendanceStatus = 'PRESENT' | 'ABSENT';
-export type PaymentMethod =
-  | 'EFECTIVO'
-  | 'TRANSFERENCIA'
-  | 'TARJETA'
-  | 'NEQUI'
-  | 'DAVIPLATA'
-  | 'OTRO';
+export type PaymentMethod = 'EFECTIVO' | 'TRANSFERENCIA' | 'NEQUI' | 'TARJETA';
 export type ExpenseCategory =
   | 'SALON'
   | 'ASISTENTE'

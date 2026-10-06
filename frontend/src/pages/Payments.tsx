@@ -1,18 +1,28 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Sparkles, Pencil, Paperclip } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Pencil, Paperclip, X } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, Input, MoneyInput, Select, Textarea } from '../components/ui/Form';
 import { Combobox } from '../components/ui/Combobox';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
-import { money, formatDate, labelize, PAYMENT_METHODS } from '../utils/format';
+import {
+  money,
+  formatDate,
+  parseThousands,
+  formatThousands,
+  paymentMethodLabel,
+  PAYMENT_METHODS,
+  PAYMENT_METHOD_LABELS,
+} from '../utils/format';
 import type { GroupModule, OneDayEvent, Payment, Student } from '../types';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
+
+type FieldErrors = Record<string, string>;
 
 export function PaymentsPage() {
   const { user } = useAuth();
@@ -26,7 +36,48 @@ export function PaymentsPage() {
   const [editing, setEditing] = useState<Payment | null>(null);
   const [editStudentId, setEditStudentId] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [receiptError, setReceiptError] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState('');
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [editAmount, setEditAmount] = useState('');
+  const [editErrors, setEditErrors] = useState<FieldErrors>({});
+  const [otherAmount, setOtherAmount] = useState('');
+  const [otherErrors, setOtherErrors] = useState<FieldErrors>({});
+  const [viewing, setViewing] = useState<Payment | null>(null);
+  const [viewUrl, setViewUrl] = useState('');
+  const [viewError, setViewError] = useState('');
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!receiptFile) {
+      setReceiptPreview('');
+      return;
+    }
+    const url = URL.createObjectURL(receiptFile);
+    setReceiptPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [receiptFile]);
+
+  useEffect(() => {
+    if (!viewing) return;
+    let url = '';
+    let cancelled = false;
+    setViewUrl('');
+    setViewError('');
+    api
+      .get(`/payments/${viewing.id}/receipt`, { responseType: 'blob' })
+      .then((res) => {
+        if (cancelled) return;
+        url = URL.createObjectURL(res.data);
+        setViewUrl(url);
+      })
+      .catch(() => !cancelled && setViewError('No se pudo cargar el comprobante.'));
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [viewing]);
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['payments', from, to],
@@ -81,10 +132,7 @@ export function PaymentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['cartera'] });
-      setOpen(false);
-      setSelectedModuleId('');
-      setReceiptFile(null);
-      setReceiptError('');
+      closeCreate();
     },
   });
 
@@ -112,16 +160,25 @@ export function PaymentsPage() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (receiptError) return;
     const form = new FormData(e.currentTarget);
+    const value = parseThousands(amount);
+    const next: FieldErrors = {};
+    if (!selectedStudentId) next.student = 'Selecciona el estudiante.';
+    if (!selectedModuleId) next.module = 'Selecciona el módulo.';
+    if (!value) next.amount = 'Escribe el valor del pago.';
+    if (!method) next.method = 'Selecciona el método de pago.';
+    if (errors.receipt) next.receipt = errors.receipt;
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+
     const student = students.find((s) => s.id === selectedStudentId);
     create.mutate({
       payload: {
         studentId: selectedStudentId,
         groupId: student?.groupId || undefined,
-        groupModuleId: form.get('groupModuleId'),
-        amount: Number(form.get('amount')),
-        method: form.get('method'),
+        groupModuleId: selectedModuleId,
+        amount: value,
+        method,
         paidAt: form.get('paidAt') || undefined,
         observation: form.get('observation') || undefined,
       },
@@ -129,32 +186,52 @@ export function PaymentsPage() {
     });
   }
 
+  function openCreate() {
+    setSelectedStudentId('');
+    setSelectedModuleId('');
+    setAmount('');
+    setMethod('');
+    setReceiptFile(null);
+    setErrors({});
+    setOpen(true);
+  }
+
   function closeCreate() {
     setOpen(false);
+    setSelectedModuleId('');
+    setAmount('');
+    setMethod('');
     setReceiptFile(null);
-    setReceiptError('');
+    setErrors({});
+  }
+
+  function clearError(field: string) {
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: '' } : prev));
   }
 
   function pickReceipt(file: File | null) {
-    if (file && file.size > RECEIPT_MAX_BYTES) {
+    const reject = (message: string) => {
       setReceiptFile(null);
-      setReceiptError('El archivo supera los 10 MB.');
+      if (receiptInputRef.current) receiptInputRef.current.value = '';
+      setErrors((prev) => ({ ...prev, receipt: message }));
+    };
+    if (!file) {
+      setReceiptFile(null);
+      if (receiptInputRef.current) receiptInputRef.current.value = '';
+      clearError('receipt');
       return;
     }
+    if (!file.type.startsWith('image/')) return reject('El comprobante debe ser una imagen.');
+    if (file.size > RECEIPT_MAX_BYTES) return reject('La imagen supera los 10 MB.');
     setReceiptFile(file);
-    setReceiptError('');
-  }
-
-  async function openReceipt(id: string) {
-    const res = await api.get(`/payments/${id}/receipt`, { responseType: 'blob' });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    clearError('receipt');
   }
 
   function openEdit(p: Payment) {
     setEditing(p);
     setEditStudentId(p.studentId ?? '');
+    setEditAmount(formatThousands(p.amount));
+    setEditErrors({});
   }
 
   function handleEditSubmit(e: FormEvent<HTMLFormElement>) {
@@ -162,8 +239,15 @@ export function PaymentsPage() {
     if (!editing) return;
     const form = new FormData(e.currentTarget);
     const isOther = !editing.studentId;
+    const value = parseThousands(editAmount);
+    const next: FieldErrors = {};
+    if (!value) next.amount = 'Escribe el valor del pago.';
+    if (!isOther && !editStudentId) next.student = 'Selecciona el estudiante.';
+    setEditErrors(next);
+    if (Object.keys(next).length > 0) return;
+
     const base = {
-      amount: Number(form.get('amount')),
+      amount: value,
       method: form.get('method'),
       paidAt: form.get('paidAt') || undefined,
       observation: form.get('observation') || '',
@@ -195,10 +279,18 @@ export function PaymentsPage() {
   function handleOtherSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const value = parseThousands(otherAmount);
+    const concept = String(form.get('concept') ?? '').trim();
+    const next: FieldErrors = {};
+    if (!concept) next.concept = 'Escribe el concepto.';
+    if (!value) next.amount = 'Escribe el valor del pago.';
+    setOtherErrors(next);
+    if (Object.keys(next).length > 0) return;
+
     const eventId = form.get('oneDayEventId');
     createOther.mutate({
-      concept: form.get('concept'),
-      amount: Number(form.get('amount')),
+      concept,
+      amount: value,
       method: form.get('method'),
       paidAt: form.get('paidAt') || undefined,
       observation: form.get('observation') || undefined,
@@ -215,18 +307,17 @@ export function PaymentsPage() {
         subtitle="Registro de pagos y pagos parciales"
         action={
           <div className="flex flex-wrap gap-2">
-            <button
-              className="btn-primary"
-              onClick={() => {
-                setSelectedStudentId('');
-                setReceiptFile(null);
-                setReceiptError('');
-                setOpen(true);
-              }}
-            >
+            <button className="btn-primary" onClick={openCreate}>
               <Plus size={16} /> Registrar pago
             </button>
-            <button className="btn-ghost" onClick={() => setOtherOpen(true)}>
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                setOtherAmount('');
+                setOtherErrors({});
+                setOtherOpen(true);
+              }}
+            >
               <Sparkles size={16} /> Agregar otro tipo de pago
             </button>
           </div>
@@ -282,7 +373,7 @@ export function PaymentsPage() {
                 '-'
               ),
           },
-          { header: 'Método', cell: (p) => labelize(p.method) },
+          { header: 'Método', cell: (p) => paymentMethodLabel(p.method) },
           { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
           {
             header: 'Comprobante',
@@ -291,7 +382,7 @@ export function PaymentsPage() {
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 text-petrol-600 hover:underline"
-                  onClick={() => openReceipt(p.id)}
+                  onClick={() => setViewing(p)}
                 >
                   <Paperclip size={14} /> Ver
                 </button>
@@ -332,28 +423,31 @@ export function PaymentsPage() {
               <h3 className="text-base font-semibold">Registrar pago</h3>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
-              <Field label="Estudiante">
+              <Field label="Estudiante" error={errors.student}>
                 <Combobox
                   options={students.map((s) => ({ value: s.id, label: s.fullName }))}
                   value={selectedStudentId}
                   onChange={(id) => {
                     setSelectedStudentId(id);
                     setSelectedModuleId('');
+                    clearError('student');
                   }}
                   placeholder="Selecciona"
                   searchPlaceholder="Escribe el nombre del estudiante..."
                   emptyText="No se encontró ningún estudiante"
                 />
               </Field>
-              <Field label="Módulo">
+              <Field label="Módulo" error={errors.module}>
                 <Select
                   name="groupModuleId"
-                  required
                   value={selectedModuleId}
-                  onChange={(e) => setSelectedModuleId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedModuleId(e.target.value);
+                    clearError('module');
+                  }}
                   disabled={!selectedGroupId}
                 >
-                  <option value="" disabled>
+                  <option value="">
                     {!selectedStudentId ? 'Elige un estudiante primero' : selectedGroupId ? 'Selecciona' : 'El estudiante no tiene grupo'}
                   </option>
                   {modules.map((m) => (
@@ -370,13 +464,27 @@ export function PaymentsPage() {
                 </p>
               )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Valor">
-                  <Input name="amount" type="number" min={1} required />
+                <Field label="Valor" error={errors.amount}>
+                  <MoneyInput
+                    value={amount}
+                    onChange={(v) => {
+                      setAmount(v);
+                      clearError('amount');
+                    }}
+                    placeholder="0"
+                  />
                 </Field>
-                <Field label="Método">
-                  <Select name="method" defaultValue="EFECTIVO">
+                <Field label="Método" error={errors.method}>
+                  <Select
+                    value={method}
+                    onChange={(e) => {
+                      setMethod(e.target.value);
+                      clearError('method');
+                    }}
+                  >
+                    <option value="">Selecciona</option>
                     {PAYMENT_METHODS.map((m) => (
-                      <option key={m} value={m}>{labelize(m)}</option>
+                      <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
                     ))}
                   </Select>
                 </Field>
@@ -387,21 +495,38 @@ export function PaymentsPage() {
               <Field label="Observación">
                 <Textarea name="observation" />
               </Field>
-              <Field label="Comprobante (opcional)" error={receiptError}>
+              <Field label="Comprobante (opcional)" error={errors.receipt}>
                 <input
+                  ref={receiptInputRef}
                   type="file"
+                  accept="image/*"
                   className="input"
                   onChange={(e) => pickReceipt(e.target.files?.[0] ?? null)}
                 />
-                <p className="mt-1 text-xs text-muted">Imagen o cualquier archivo, hasta 10 MB.</p>
+                <p className="mt-1 text-xs text-muted">Imagen de la galería o de la cámara, hasta 10 MB.</p>
+                {receiptPreview && (
+                  <div className="mt-2 flex items-start gap-3">
+                    <img
+                      src={receiptPreview}
+                      alt="Vista previa del comprobante"
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-xs text-muted">{receiptFile?.name}</p>
+                      <button
+                        type="button"
+                        className="mt-1 inline-flex items-center gap-1 text-xs text-red-500 hover:underline"
+                        onClick={() => pickReceipt(null)}
+                      >
+                        <X size={13} /> Quitar imagen
+                      </button>
+                    </div>
+                  </div>
+                )}
               </Field>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" className="btn-ghost" onClick={() => closeCreate()}>Cancelar</button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={create.isPending || !selectedStudentId || !!receiptError}
-                >
+                <button type="submit" className="btn-primary" disabled={create.isPending}>
                   {create.isPending ? 'Guardando...' : 'Registrar'}
                 </button>
               </div>
@@ -415,11 +540,14 @@ export function PaymentsPage() {
           <form onSubmit={handleEditSubmit} className="space-y-4">
             {editing.studentId ? (
               <>
-                <Field label="Estudiante">
+                <Field label="Estudiante" error={editErrors.student}>
                   <Combobox
                     options={students.map((s) => ({ value: s.id, label: s.fullName }))}
                     value={editStudentId}
-                    onChange={setEditStudentId}
+                    onChange={(id) => {
+                      setEditStudentId(id);
+                      setEditErrors((prev) => ({ ...prev, student: '' }));
+                    }}
                     placeholder="Selecciona"
                     searchPlaceholder="Escribe el nombre del estudiante..."
                     emptyText="No se encontró ningún estudiante"
@@ -452,13 +580,19 @@ export function PaymentsPage() {
               </>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Valor">
-                <Input name="amount" type="number" min={1} required defaultValue={editing.amount} />
+              <Field label="Valor" error={editErrors.amount}>
+                <MoneyInput
+                  value={editAmount}
+                  onChange={(v) => {
+                    setEditAmount(v);
+                    setEditErrors((prev) => ({ ...prev, amount: '' }));
+                  }}
+                />
               </Field>
               <Field label="Método">
                 <Select name="method" defaultValue={editing.method}>
                   {PAYMENT_METHODS.map((m) => (
-                    <option key={m} value={m}>{labelize(m)}</option>
+                    <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
                   ))}
                 </Select>
               </Field>
@@ -485,8 +619,12 @@ export function PaymentsPage() {
             Para ingresos que no provienen de una formación: constelaciones, propinas u otros
             ingresos extra.
           </p>
-          <Field label="Concepto">
-            <Input name="concept" required placeholder="Ej: Constelación, propina, ingreso extra" />
+          <Field label="Concepto" error={otherErrors.concept}>
+            <Input
+              name="concept"
+              placeholder="Ej: Constelación, propina, ingreso extra"
+              onChange={() => setOtherErrors((prev) => ({ ...prev, concept: '' }))}
+            />
           </Field>
           <Field label="Relacionar a una constelación (opcional)">
             <Select name="oneDayEventId" defaultValue="">
@@ -499,13 +637,20 @@ export function PaymentsPage() {
             </Select>
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Valor">
-              <Input name="amount" type="number" min={1} required />
+            <Field label="Valor" error={otherErrors.amount}>
+              <MoneyInput
+                value={otherAmount}
+                onChange={(v) => {
+                  setOtherAmount(v);
+                  setOtherErrors((prev) => ({ ...prev, amount: '' }));
+                }}
+                placeholder="0"
+              />
             </Field>
             <Field label="Método">
               <Select name="method" defaultValue="EFECTIVO">
                 {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>{labelize(m)}</option>
+                  <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
                 ))}
               </Select>
             </Field>
@@ -523,6 +668,38 @@ export function PaymentsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={!!viewing} title="Comprobante de pago" onClose={() => setViewing(null)}>
+        {viewing && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted">
+              {viewing.student?.fullName ?? viewing.concept ?? 'Otro ingreso'} · {money(viewing.amount)} ·{' '}
+              {formatDate(viewing.paidAt)}
+            </p>
+            {viewError ? (
+              <p className="text-sm text-red-600">{viewError}</p>
+            ) : viewUrl ? (
+              <>
+                <img
+                  src={viewUrl}
+                  alt="Comprobante de pago"
+                  className="max-h-[60vh] w-full rounded-lg object-contain"
+                />
+                <a
+                  href={viewUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-block text-sm text-petrol-600 hover:underline"
+                >
+                  Abrir en tamaño completo
+                </a>
+              </>
+            ) : (
+              <p className="text-sm text-muted">Cargando comprobante...</p>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

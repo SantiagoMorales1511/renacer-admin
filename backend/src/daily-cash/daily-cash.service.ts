@@ -15,11 +15,9 @@ export class DailyCashService {
 
     const byMethod: Record<string, number> = {
       EFECTIVO: 0,
-      TARJETA: 0,
       TRANSFERENCIA: 0,
       NEQUI: 0,
-      DAVIPLATA: 0,
-      OTRO: 0,
+      TARJETA: 0,
     };
 
     let total = 0;

@@ -1,4 +1,5 @@
 import { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { formatThousands } from '../../utils/format';
 
 export function Field({
   label,
@@ -20,6 +21,27 @@ export function Field({
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className="input" />;
+}
+
+export function MoneyInput({
+  value,
+  onChange,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <input
+      {...props}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      value={formatThousands(value)}
+      onChange={(e) => onChange(formatThousands(e.target.value))}
+      className="input"
+    />
+  );
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {

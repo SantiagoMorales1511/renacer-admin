@@ -5,7 +5,7 @@ import { PageHeader, Field, Input } from '../components/ui/Form';
 import { StatTile } from '../components/ui/Card';
 import { DataTable } from '../components/ui/DataTable';
 import { useAuth } from '../store/auth';
-import { money, formatTime, labelize } from '../utils/format';
+import { money, formatTime, paymentMethodLabel } from '../utils/format';
 
 export function DailyCashPage() {
   const { user } = useAuth();
@@ -27,11 +27,9 @@ export function DailyCashPage() {
 
   const methods = [
     ['EFECTIVO', 'Efectivo'],
-    ['TARJETA', 'Tarjeta'],
     ['TRANSFERENCIA', 'Transferencia'],
     ['NEQUI', 'Nequi'],
-    ['DAVIPLATA', 'Daviplata'],
-    ['OTRO', 'Otros'],
+    ['TARJETA', 'Tarjeta de crédito'],
   ] as const;
 
   return (
@@ -70,7 +68,7 @@ export function DailyCashPage() {
           { header: 'Estudiante', primary: true, className: 'font-medium', cell: (p) => p.studentName },
           { header: 'Grupo', cell: (p) => p.groupName ?? '-' },
           { header: 'Módulo', cell: (p) => p.moduleName },
-          { header: 'Método', cell: (p) => labelize(p.method) },
+          { header: 'Método', cell: (p) => paymentMethodLabel(p.method) },
           { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
         ]}
       />

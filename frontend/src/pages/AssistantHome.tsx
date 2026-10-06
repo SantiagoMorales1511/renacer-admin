@@ -5,7 +5,7 @@ import { StatTile } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/Form';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
-import { money, formatDateTime, formatTime, labelize, sessionLabel, sessionSubtitle } from '../utils/format';
+import { money, formatDateTime, formatTime, labelize, paymentMethodLabel, sessionLabel, sessionSubtitle } from '../utils/format';
 
 export function AssistantHomePage() {
   const { data, isLoading } = useQuery({
@@ -99,7 +99,7 @@ export function AssistantHomePage() {
             columns={[
               { header: 'Estudiante', primary: true, className: 'font-medium', cell: (p) => p.studentName },
               { header: 'Módulo', cell: (p) => p.moduleName },
-              { header: 'Método', cell: (p) => labelize(p.method) },
+              { header: 'Método', cell: (p) => paymentMethodLabel(p.method) },
               { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
               { header: 'Hora', cell: (p) => formatTime(p.paidAt) },
             ]}

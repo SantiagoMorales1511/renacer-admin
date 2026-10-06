@@ -9,6 +9,17 @@ export function money(value: number): string {
   }).format(value ?? 0);
 }
 
+export function formatThousands(value: string | number): string {
+  const digits = String(value ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+export function parseThousands(value: string): number {
+  const digits = value.replace(/\D/g, '');
+  return digits ? Number(digits) : 0;
+}
+
 export function formatDate(value?: string | Date | null, pattern = "d MMM yyyy"): string {
   if (!value) return '-';
   const date = typeof value === 'string' ? parseISO(value) : value;
@@ -27,14 +38,19 @@ export function formatTime(value?: string | Date | null): string {
   return format(date, 'h:mm a', { locale: es });
 }
 
-export const PAYMENT_METHODS = [
-  'EFECTIVO',
-  'TRANSFERENCIA',
-  'TARJETA',
-  'NEQUI',
-  'DAVIPLATA',
-  'OTRO',
-] as const;
+export const PAYMENT_METHODS = ['EFECTIVO', 'TRANSFERENCIA', 'NEQUI', 'TARJETA'] as const;
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  EFECTIVO: 'Efectivo',
+  TRANSFERENCIA: 'Transferencia',
+  NEQUI: 'Nequi',
+  TARJETA: 'Tarjeta de crédito',
+};
+
+export function paymentMethodLabel(method?: string | null): string {
+  if (!method) return '-';
+  return PAYMENT_METHOD_LABELS[method] ?? labelize(method);
+}
 
 export const EXPENSE_CATEGORIES = [
   'SALON',
