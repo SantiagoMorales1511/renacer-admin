@@ -14,6 +14,13 @@ import {
 const RECEIPT_PREFIX = 'receipts/';
 const LOCAL_ROOT = resolve(process.cwd(), 'uploads');
 
+export interface UploadedReceipt {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 export interface StoredReceipt {
   key: string;
   contentType: string;
@@ -36,7 +43,7 @@ export class ReceiptStorageService {
     return key.startsWith(RECEIPT_PREFIX) && !key.includes('..');
   }
 
-  async save(file: Express.Multer.File): Promise<StoredReceipt> {
+  async save(file: UploadedReceipt): Promise<StoredReceipt> {
     const originalName = this.decodeName(file.originalname);
     const contentType = file.mimetype || 'application/octet-stream';
     const key = `${RECEIPT_PREFIX}${randomUUID()}${extname(originalName).toLowerCase()}`;

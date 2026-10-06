@@ -14,10 +14,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import { ServerResponse } from 'http';
 import { Role } from '@prisma/client';
 import { PaymentsService } from './payments.service';
-import { ReceiptStorageService } from './receipt-storage.service';
+import { ReceiptStorageService, UploadedReceipt } from './receipt-storage.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -50,7 +50,7 @@ export class PaymentsController {
 
   @Post('receipt')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: RECEIPT_MAX_BYTES } }))
-  async uploadReceipt(@UploadedFile() file?: Express.Multer.File) {
+  async uploadReceipt(@UploadedFile() file?: UploadedReceipt) {
     if (!file) {
       throw new BadRequestException('No se recibió ningún archivo');
     }
@@ -59,7 +59,7 @@ export class PaymentsController {
   }
 
   @Get(':id/receipt')
-  async downloadReceipt(@Param('id') id: string, @Res() res: Response) {
+  async downloadReceipt(@Param('id') id: string, @Res() res: ServerResponse) {
     const key = await this.paymentsService.getReceiptKey(id);
     const file = await this.receipts.read(key);
     res.setHeader('Content-Type', file.contentType);
