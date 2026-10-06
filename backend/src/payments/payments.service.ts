@@ -1,10 +1,22 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
+import { ReceiptStorageService } from './receipt-storage.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private receipts: ReceiptStorageService,
+  ) {}
+
+  async getReceiptKey(id: string) {
+    const payment = await this.prisma.payment.findUnique({ where: { id } });
+    if (!payment?.receiptUrl) {
+      throw new NotFoundException('Comprobante no encontrado');
+    }
+    return payment.receiptUrl;
+  }
 
   findAll(params: { from?: string; to?: string; studentId?: string; groupId?: string }) {
     const where: any = {};
@@ -40,6 +52,10 @@ export class PaymentsService {
       }
     }
 
+    if (dto.receiptUrl && !this.receipts.isReceiptKey(dto.receiptUrl)) {
+      throw new BadRequestException('Comprobante inválido');
+    }
+
     return this.prisma.payment.create({
       data: {
         studentId: dto.studentId ?? null,
@@ -52,7 +68,7 @@ export class PaymentsService {
         method: dto.method,
         paidAt: dto.paidAt ? new Date(dto.paidAt) : new Date(),
         observation: dto.observation,
-        receiptUrl: dto.receiptUrl,
+        receiptUrl: dto.receiptUrl ?? null,
         registeredById: userId,
       },
       include: { student: true, group: true, groupModule: true, oneDayEvent: true },
@@ -115,6 +131,9 @@ export class PaymentsService {
       throw new NotFoundException('Pago no encontrado');
     }
     await this.prisma.payment.delete({ where: { id } });
+    if (p.receiptUrl) {
+      await this.receipts.remove(p.receiptUrl);
+    }
     return { ok: true };
   }
 }

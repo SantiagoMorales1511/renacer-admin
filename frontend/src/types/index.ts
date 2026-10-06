@@ -140,6 +140,7 @@ export interface Payment {
   method: PaymentMethod;
   paidAt: string;
   observation?: string | null;
+  receiptUrl?: string | null;
   student?: Student | null;
   group?: Group | null;
   groupModule?: GroupModule | null;

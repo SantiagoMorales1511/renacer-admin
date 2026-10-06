@@ -1,6 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { Role } from '@prisma/client';
 import { PaymentsService } from './payments.service';
+import { ReceiptStorageService } from './receipt-storage.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -9,11 +26,14 @@ import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorat
 import { AuditService } from '../common/audit/audit.service';
 import { EventsGateway } from '../websocket/events.gateway';
 
+const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(
     private paymentsService: PaymentsService,
+    private receipts: ReceiptStorageService,
     private audit: AuditService,
     private events: EventsGateway,
   ) {}
@@ -26,6 +46,28 @@ export class PaymentsController {
     @Query('groupId') groupId?: string,
   ) {
     return this.paymentsService.findAll({ from, to, studentId, groupId });
+  }
+
+  @Post('receipt')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: RECEIPT_MAX_BYTES } }))
+  async uploadReceipt(@UploadedFile() file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No se recibió ningún archivo');
+    }
+    const stored = await this.receipts.save(file);
+    return { receiptUrl: stored.key };
+  }
+
+  @Get(':id/receipt')
+  async downloadReceipt(@Param('id') id: string, @Res() res: Response) {
+    const key = await this.paymentsService.getReceiptKey(id);
+    const file = await this.receipts.read(key);
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
+    );
+    file.stream.pipe(res);
   }
 
   @Post()

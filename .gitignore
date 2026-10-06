@@ -14,6 +14,9 @@ coverage/
 frontend/vite.config.js
 frontend/vite.config.d.ts
 
+# Comprobantes guardados en disco cuando no hay bucket configurado
+backend/uploads/
+
 # Datos sensibles / importación local
 renacer_import_desglosado/
 backend/prisma/_historico_load-renacer-once.ts

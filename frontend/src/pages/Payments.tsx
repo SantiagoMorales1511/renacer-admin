@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Sparkles, Pencil } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Pencil, Paperclip } from 'lucide-react';
 import { api } from '../services/api';
 import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
 import { Combobox } from '../components/ui/Combobox';
@@ -11,6 +11,8 @@ import { money, formatDate, labelize, PAYMENT_METHODS } from '../utils/format';
 import type { GroupModule, OneDayEvent, Payment, Student } from '../types';
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
 
 export function PaymentsPage() {
   const { user } = useAuth();
@@ -23,6 +25,8 @@ export function PaymentsPage() {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [editing, setEditing] = useState<Payment | null>(null);
   const [editStudentId, setEditStudentId] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptError, setReceiptError] = useState('');
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['payments', from, to],
@@ -65,12 +69,22 @@ export function PaymentsPage() {
   });
 
   const create = useMutation({
-    mutationFn: async (payload: any) => (await api.post('/payments', payload)).data,
+    mutationFn: async ({ payload, file }: { payload: any; file: File | null }) => {
+      let receiptUrl: string | undefined;
+      if (file) {
+        const body = new FormData();
+        body.append('file', file);
+        receiptUrl = (await api.post('/payments/receipt', body)).data.receiptUrl;
+      }
+      return (await api.post('/payments', { ...payload, receiptUrl })).data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['cartera'] });
       setOpen(false);
       setSelectedModuleId('');
+      setReceiptFile(null);
+      setReceiptError('');
     },
   });
 
@@ -98,17 +112,44 @@ export function PaymentsPage() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (receiptError) return;
     const form = new FormData(e.currentTarget);
     const student = students.find((s) => s.id === selectedStudentId);
     create.mutate({
-      studentId: selectedStudentId,
-      groupId: student?.groupId || undefined,
-      groupModuleId: form.get('groupModuleId'),
-      amount: Number(form.get('amount')),
-      method: form.get('method'),
-      paidAt: form.get('paidAt') || undefined,
-      observation: form.get('observation') || undefined,
+      payload: {
+        studentId: selectedStudentId,
+        groupId: student?.groupId || undefined,
+        groupModuleId: form.get('groupModuleId'),
+        amount: Number(form.get('amount')),
+        method: form.get('method'),
+        paidAt: form.get('paidAt') || undefined,
+        observation: form.get('observation') || undefined,
+      },
+      file: receiptFile,
     });
+  }
+
+  function closeCreate() {
+    setOpen(false);
+    setReceiptFile(null);
+    setReceiptError('');
+  }
+
+  function pickReceipt(file: File | null) {
+    if (file && file.size > RECEIPT_MAX_BYTES) {
+      setReceiptFile(null);
+      setReceiptError('El archivo supera los 10 MB.');
+      return;
+    }
+    setReceiptFile(file);
+    setReceiptError('');
+  }
+
+  async function openReceipt(id: string) {
+    const res = await api.get(`/payments/${id}/receipt`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   function openEdit(p: Payment) {
@@ -174,7 +215,15 @@ export function PaymentsPage() {
         subtitle="Registro de pagos y pagos parciales"
         action={
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" onClick={() => { setSelectedStudentId(''); setOpen(true); }}>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setSelectedStudentId('');
+                setReceiptFile(null);
+                setReceiptError('');
+                setOpen(true);
+              }}
+            >
               <Plus size={16} /> Registrar pago
             </button>
             <button className="btn-ghost" onClick={() => setOtherOpen(true)}>
@@ -235,6 +284,21 @@ export function PaymentsPage() {
           },
           { header: 'Método', cell: (p) => labelize(p.method) },
           { header: 'Valor', className: 'font-medium', cell: (p) => money(p.amount) },
+          {
+            header: 'Comprobante',
+            cell: (p) =>
+              p.receiptUrl ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-petrol-600 hover:underline"
+                  onClick={() => openReceipt(p.id)}
+                >
+                  <Paperclip size={14} /> Ver
+                </button>
+              ) : (
+                <span className="text-muted">-</span>
+              ),
+          },
           {
             header: 'Acciones',
             align: 'right',
@@ -323,9 +387,21 @@ export function PaymentsPage() {
               <Field label="Observación">
                 <Textarea name="observation" />
               </Field>
+              <Field label="Comprobante (opcional)" error={receiptError}>
+                <input
+                  type="file"
+                  className="input"
+                  onChange={(e) => pickReceipt(e.target.files?.[0] ?? null)}
+                />
+                <p className="mt-1 text-xs text-muted">Imagen o cualquier archivo, hasta 10 MB.</p>
+              </Field>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={create.isPending || !selectedStudentId}>
+                <button type="button" className="btn-ghost" onClick={() => closeCreate()}>Cancelar</button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={create.isPending || !selectedStudentId || !!receiptError}
+                >
                   {create.isPending ? 'Guardando...' : 'Registrar'}
                 </button>
               </div>
