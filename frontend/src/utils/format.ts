@@ -20,6 +20,20 @@ export function parseThousands(value: string): number {
   return digits ? Number(digits) : 0;
 }
 
+export function todayInput(): string {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+export function dateInputValue(value: string): string {
+  const date = parseISO(value);
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${month}-${day}`;
+}
+
 export function formatDate(value?: string | Date | null, pattern = "d MMM yyyy"): string {
   if (!value) return '-';
   const date = typeof value === 'string' ? parseISO(value) : value;

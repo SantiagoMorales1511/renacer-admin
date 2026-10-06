@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
 import { ReceiptStorageService } from './receipt-storage.service';
+import { endOfDateOnly, parseDateOnly, startOfDateOnly } from '../common/date.util';
 
 @Injectable()
 export class PaymentsService {
@@ -24,8 +25,8 @@ export class PaymentsService {
     if (params.groupId) where.groupId = params.groupId;
     if (params.from || params.to) {
       where.paidAt = {};
-      if (params.from) where.paidAt.gte = new Date(params.from);
-      if (params.to) where.paidAt.lte = new Date(params.to);
+      if (params.from) where.paidAt.gte = startOfDateOnly(params.from);
+      if (params.to) where.paidAt.lte = endOfDateOnly(params.to);
     }
     return this.prisma.payment.findMany({
       where,
@@ -66,7 +67,7 @@ export class PaymentsService {
         concept: dto.concept ?? null,
         amount: dto.amount,
         method: dto.method,
-        paidAt: dto.paidAt ? new Date(dto.paidAt) : new Date(),
+        paidAt: dto.paidAt ? parseDateOnly(dto.paidAt)! : new Date(),
         observation: dto.observation,
         receiptUrl: dto.receiptUrl ?? null,
         registeredById: userId,
@@ -115,7 +116,7 @@ export class PaymentsService {
     if (dto.concept !== undefined) data.concept = dto.concept || null;
     if (dto.amount !== undefined) data.amount = dto.amount;
     if (dto.method !== undefined) data.method = dto.method;
-    if (dto.paidAt !== undefined) data.paidAt = new Date(dto.paidAt);
+    if (dto.paidAt !== undefined) data.paidAt = parseDateOnly(dto.paidAt) ?? new Date(dto.paidAt);
     if (dto.observation !== undefined) data.observation = dto.observation || null;
 
     return this.prisma.payment.update({

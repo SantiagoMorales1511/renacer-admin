@@ -12,13 +12,13 @@ import {
   formatDate,
   parseThousands,
   formatThousands,
+  todayInput,
+  dateInputValue,
   paymentMethodLabel,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
 } from '../utils/format';
 import type { GroupModule, OneDayEvent, Payment, Student } from '../types';
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
 
@@ -490,7 +490,7 @@ export function PaymentsPage() {
                 </Field>
               </div>
               <Field label="Fecha de pago">
-                <Input name="paidAt" type="date" defaultValue={today()} />
+                <Input name="paidAt" type="date" defaultValue={todayInput()} />
               </Field>
               <Field label="Observación">
                 <Textarea name="observation" />
@@ -598,7 +598,7 @@ export function PaymentsPage() {
               </Field>
             </div>
             <Field label="Fecha de pago">
-              <Input name="paidAt" type="date" defaultValue={editing.paidAt.slice(0, 10)} />
+              <Input name="paidAt" type="date" defaultValue={dateInputValue(editing.paidAt)} />
             </Field>
             <Field label="Observación">
               <Textarea name="observation" defaultValue={editing.observation ?? ''} />
@@ -656,7 +656,7 @@ export function PaymentsPage() {
             </Field>
           </div>
           <Field label="Fecha de pago">
-            <Input name="paidAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            <Input name="paidAt" type="date" defaultValue={todayInput()} />
           </Field>
           <Field label="Observación">
             <Textarea name="observation" />

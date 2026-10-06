@@ -8,3 +8,15 @@ export function parseDateOnly(value?: string | null): Date | null {
   }
   return new Date(value);
 }
+
+export function startOfDateOnly(value: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (m) return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0, 0, 0));
+  return new Date(value);
+}
+
+export function endOfDateOnly(value: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (m) return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59, 999));
+  return new Date(value);
+}
