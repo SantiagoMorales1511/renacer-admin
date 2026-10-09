@@ -118,12 +118,25 @@ export class PaymentsService {
     if (dto.method !== undefined) data.method = dto.method;
     if (dto.paidAt !== undefined) data.paidAt = parseDateOnly(dto.paidAt) ?? new Date(dto.paidAt);
     if (dto.observation !== undefined) data.observation = dto.observation || null;
+    if (dto.receiptUrl !== undefined) {
+      const next = dto.receiptUrl || null;
+      if (next && !this.receipts.isReceiptKey(next)) {
+        throw new BadRequestException('Comprobante inválido');
+      }
+      data.receiptUrl = next;
+    }
 
-    return this.prisma.payment.update({
+    const updated = await this.prisma.payment.update({
       where: { id },
       data,
       include: { student: true, group: true, groupModule: true, oneDayEvent: true },
     });
+
+    if (existing.receiptUrl && existing.receiptUrl !== updated.receiptUrl) {
+      await this.receipts.remove(existing.receiptUrl);
+    }
+
+    return updated;
   }
 
   async remove(id: string) {

@@ -42,6 +42,11 @@ export function PaymentsPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [editAmount, setEditAmount] = useState('');
   const [editErrors, setEditErrors] = useState<FieldErrors>({});
+  const [editReceiptFile, setEditReceiptFile] = useState<File | null>(null);
+  const [editReceiptPreview, setEditReceiptPreview] = useState('');
+  const [editReceiptRemoved, setEditReceiptRemoved] = useState(false);
+  const [editExistingPreview, setEditExistingPreview] = useState('');
+  const editReceiptInputRef = useRef<HTMLInputElement>(null);
   const [otherAmount, setOtherAmount] = useState('');
   const [otherErrors, setOtherErrors] = useState<FieldErrors>({});
   const [viewing, setViewing] = useState<Payment | null>(null);
@@ -58,6 +63,39 @@ export function PaymentsPage() {
     setReceiptPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [receiptFile]);
+
+  useEffect(() => {
+    if (!editReceiptFile) {
+      setEditReceiptPreview('');
+      return;
+    }
+    const url = URL.createObjectURL(editReceiptFile);
+    setEditReceiptPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [editReceiptFile]);
+
+  useEffect(() => {
+    if (!editing?.receiptUrl || editReceiptRemoved || editReceiptFile) {
+      setEditExistingPreview('');
+      return;
+    }
+    let url = '';
+    let cancelled = false;
+    api
+      .get(`/payments/${editing.id}/receipt`, { responseType: 'blob' })
+      .then((res) => {
+        if (cancelled) return;
+        url = URL.createObjectURL(res.data);
+        setEditExistingPreview(url);
+      })
+      .catch(() => {
+        if (!cancelled) setEditExistingPreview('');
+      });
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [editing, editReceiptRemoved, editReceiptFile]);
 
   useEffect(() => {
     if (!viewing) return;
@@ -145,8 +183,32 @@ export function PaymentsPage() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) =>
-      (await api.patch(`/payments/${id}`, data)).data,
+    mutationFn: async ({
+      id,
+      data,
+      file,
+      removeReceipt,
+    }: {
+      id: string;
+      data: any;
+      file: File | null;
+      removeReceipt: boolean;
+    }) => {
+      let receiptUrl: string | undefined;
+      if (file) {
+        const body = new FormData();
+        body.append('file', file);
+        receiptUrl = (await api.post('/payments/receipt', body)).data.receiptUrl;
+      } else if (removeReceipt) {
+        receiptUrl = '';
+      }
+      return (
+        await api.patch(`/payments/${id}`, {
+          ...data,
+          ...(receiptUrl !== undefined ? { receiptUrl } : {}),
+        })
+      ).data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       setEditing(null);
@@ -232,6 +294,32 @@ export function PaymentsPage() {
     setEditStudentId(p.studentId ?? '');
     setEditAmount(formatThousands(p.amount));
     setEditErrors({});
+    setEditReceiptFile(null);
+    setEditReceiptRemoved(false);
+    if (editReceiptInputRef.current) editReceiptInputRef.current.value = '';
+  }
+
+  function pickEditReceipt(file: File | null) {
+    const reject = (message: string) => {
+      setEditReceiptFile(null);
+      if (editReceiptInputRef.current) editReceiptInputRef.current.value = '';
+      setEditErrors((prev) => ({ ...prev, receipt: message }));
+    };
+    if (!file) {
+      setEditReceiptFile(null);
+      if (editReceiptInputRef.current) editReceiptInputRef.current.value = '';
+      setEditErrors((prev) => ({ ...prev, receipt: '' }));
+      return;
+    }
+    if (!file.type.startsWith('image/')) return reject('El comprobante debe ser una imagen.');
+    if (file.size > RECEIPT_MAX_BYTES) return reject('La imagen supera los 10 MB.');
+    setEditReceiptFile(file);
+    setEditErrors((prev) => ({ ...prev, receipt: '' }));
+  }
+
+  function clearEditReceipt() {
+    pickEditReceipt(null);
+    setEditReceiptRemoved(true);
   }
 
   function handleEditSubmit(e: FormEvent<HTMLFormElement>) {
@@ -243,6 +331,7 @@ export function PaymentsPage() {
     const next: FieldErrors = {};
     if (!value) next.amount = 'Escribe el valor del pago.';
     if (!isOther && !editStudentId) next.student = 'Selecciona el estudiante.';
+    if (editErrors.receipt) next.receipt = editErrors.receipt;
     setEditErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -256,6 +345,8 @@ export function PaymentsPage() {
       const eventId = form.get('oneDayEventId');
       update.mutate({
         id: editing.id,
+        file: editReceiptFile,
+        removeReceipt: editReceiptRemoved,
         data: {
           ...base,
           concept: form.get('concept'),
@@ -266,6 +357,8 @@ export function PaymentsPage() {
       const student = students.find((s) => s.id === editStudentId);
       update.mutate({
         id: editing.id,
+        file: editReceiptFile,
+        removeReceipt: editReceiptRemoved,
         data: {
           ...base,
           studentId: editStudentId,
@@ -602,6 +695,37 @@ export function PaymentsPage() {
             </Field>
             <Field label="Observación">
               <Textarea name="observation" defaultValue={editing.observation ?? ''} />
+            </Field>
+            <Field label="Comprobante (opcional)" error={editErrors.receipt}>
+              <input
+                ref={editReceiptInputRef}
+                type="file"
+                accept="image/*"
+                className="input"
+                onChange={(e) => pickEditReceipt(e.target.files?.[0] ?? null)}
+              />
+              <p className="mt-1 text-xs text-muted">Imagen de la galería o de la cámara, hasta 10 MB.</p>
+              {(editReceiptPreview || editExistingPreview) && (
+                <div className="mt-2 flex items-start gap-3">
+                  <img
+                    src={editReceiptPreview || editExistingPreview}
+                    alt="Vista previa del comprobante"
+                    className="h-24 w-24 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-muted">
+                      {editReceiptFile?.name ?? 'Comprobante actual'}
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-red-500 hover:underline"
+                      onClick={clearEditReceipt}
+                    >
+                      <X size={13} /> Quitar comprobante
+                    </button>
+                  </div>
+                </div>
+              )}
             </Field>
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className="btn-ghost" onClick={() => setEditing(null)}>Cancelar</button>

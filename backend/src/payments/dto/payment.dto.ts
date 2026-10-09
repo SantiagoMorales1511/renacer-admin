@@ -83,4 +83,8 @@ export class UpdatePaymentDto {
   @IsOptional()
   @IsString()
   observation?: string;
+
+  @IsOptional()
+  @IsString()
+  receiptUrl?: string;
 }
