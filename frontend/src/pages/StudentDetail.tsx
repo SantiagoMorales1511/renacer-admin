@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -13,11 +13,24 @@ import {
   money,
   formatDate,
   formatDateTime,
+  formatThousands,
   parseThousands,
   paymentMethodLabel,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
 } from '../utils/format';
+
+type ModuleRow = {
+  moduleId: string;
+  number: number;
+  name: string;
+  baseValue: number;
+  groupPrice: number;
+  hasModulePrice: boolean;
+  paid: number;
+  balance: number;
+  attended: boolean;
+};
 
 export function StudentDetailPage() {
   const { id } = useParams();
@@ -27,10 +40,34 @@ export function StudentDetailPage() {
   const [moduleId, setModuleId] = useState('');
   const [method, setMethod] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [allPrice, setAllPrice] = useState('');
+  const [modulePrices, setModulePrices] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['student', id],
     queryFn: async () => (await api.get(`/students/${id}`)).data,
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    setAllPrice(data.customPrice ? formatThousands(data.customPrice) : '');
+    setModulePrices(
+      Object.fromEntries(
+        (data.moduleSummary as ModuleRow[]).map((m) => [m.moduleId, formatThousands(m.baseValue)]),
+      ),
+    );
+  }, [data]);
+
+  const savePricing = useMutation({
+    mutationFn: async (payload: {
+      scope: 'all' | 'module';
+      groupModuleId?: string;
+      price: number | null;
+    }) => (await api.patch(`/students/${id}/pricing`, payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student', id] });
+      queryClient.invalidateQueries({ queryKey: ['cartera'] });
+    },
   });
 
   const pay = useMutation({
@@ -77,6 +114,18 @@ export function StudentDetailPage() {
     setErrors({});
   }
 
+  function applyToAll(price: number | null) {
+    savePricing.mutate({ scope: 'all', price });
+  }
+
+  function applyToModule(groupModuleId: string, price: number | null) {
+    savePricing.mutate({ scope: 'module', groupModuleId, price });
+  }
+
+  const hasDiscount =
+    data.customPrice != null ||
+    (data.moduleSummary as ModuleRow[]).some((m) => m.hasModulePrice);
+
   return (
     <div>
       <PageHeader
@@ -96,11 +145,47 @@ export function StudentDetailPage() {
         <StatTile label="Inscripción" value={<span className="text-base">{formatDate(data.enrolledAt)}</span>} />
       </div>
 
+      {data.moduleSummary.length > 0 && (
+        <div className="card mb-4 p-4">
+          <h3 className="text-sm font-semibold">Valor que paga esta persona</h3>
+          <p className="mt-1 text-xs text-muted">
+            Si tiene un descuento, escribe aquí cuánto paga por módulo. Déjalo vacío para usar el
+            precio del grupo.
+          </p>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <div className="w-40">
+              <MoneyInput value={allPrice} onChange={setAllPrice} placeholder="0" />
+            </div>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={savePricing.isPending}
+              onClick={() => applyToAll(allPrice ? parseThousands(allPrice) : null)}
+            >
+              Aplicar a todos los módulos
+            </button>
+            {hasDiscount && (
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={savePricing.isPending}
+                onClick={() => {
+                  setAllPrice('');
+                  applyToAll(null);
+                }}
+              >
+                Usar el precio del grupo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mb-4">
         <h3 className="mb-3 text-sm font-semibold">Módulos</h3>
         <DataTable
           breakpoint="sm"
-          rows={data.moduleSummary as any[]}
+          rows={data.moduleSummary as ModuleRow[]}
           rowKey={(m) => m.moduleId}
           empty="Sin módulos."
           columns={[
@@ -110,6 +195,40 @@ export function StudentDetailPage() {
               header: 'Visto',
               cell: (m) => (
                 <Badge status={m.attended ? 'PRESENT' : 'ABSENT'} label={m.attended ? 'Sí' : 'No'} />
+              ),
+            },
+            {
+              header: 'Valor',
+              cell: (m) => (
+                <div className="flex items-center gap-2">
+                  <div className="w-28">
+                    <MoneyInput
+                      value={modulePrices[m.moduleId] ?? ''}
+                      onChange={(v) =>
+                        setModulePrices((prev) => ({ ...prev, [m.moduleId]: v }))
+                      }
+                      placeholder={formatThousands(m.groupPrice)}
+                    />
+                  </div>
+                  {parseThousands(modulePrices[m.moduleId] ?? '') !== m.baseValue && (
+                    <button
+                      type="button"
+                      className="text-xs text-petrol-600 hover:underline"
+                      disabled={savePricing.isPending}
+                      onClick={() => {
+                        const value = modulePrices[m.moduleId];
+                        applyToModule(m.moduleId, value ? parseThousands(value) : null);
+                      }}
+                    >
+                      Guardar
+                    </button>
+                  )}
+                  {m.baseValue !== m.groupPrice && (
+                    <span className="text-xs text-muted">
+                      Grupo: {money(m.groupPrice)}
+                    </span>
+                  )}
+                </div>
               ),
             },
             { header: 'Pagado', cell: (m) => money(m.paid) },

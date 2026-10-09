@@ -1,4 +1,13 @@
-import { IsDateString, IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { StudentStatus } from '@prisma/client';
 
 export class CreateStudentDto {
@@ -66,4 +75,18 @@ export class UpdateStudentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+export class StudentPricingDto {
+  @IsIn(['all', 'module'])
+  scope: 'all' | 'module';
+
+  @IsOptional()
+  @IsString()
+  groupModuleId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number | null;
 }

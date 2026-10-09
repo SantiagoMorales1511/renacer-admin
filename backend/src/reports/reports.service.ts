@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { moduleBalance } from '../common/module-balance.util';
+import { modulePriceFor } from '../common/student-price.util';
 
 function startOfDay(d = new Date()) {
   const x = new Date(d);
@@ -46,7 +47,10 @@ export class ReportsService {
   private async studentModuleBalances() {
     const now = new Date();
     const [students, groupModules, payments, attendances] = await Promise.all([
-      this.prisma.student.findMany({ where: { status: 'ACTIVE' }, include: { group: true } }),
+      this.prisma.student.findMany({
+        where: { status: 'ACTIVE' },
+        include: { group: true, modulePrices: true },
+      }),
       this.prisma.groupModule.findMany({ where: { status: 'ACTIVE' } }),
       this.prisma.payment.findMany({ where: { studentId: { not: null } } }),
       this.prisma.attendance.findMany({
@@ -82,13 +86,14 @@ export class ReportsService {
         const paid = paidByStudentModule.get(key) ?? 0;
         const dictated = m.date ? m.date <= now : true;
         const attended = attendedKey.has(key);
-        const { balance } = moduleBalance({ price: m.price, paid, attended, dictated });
+        const price = modulePriceFor(s, m);
+        const { balance } = moduleBalance({ price, paid, attended, dictated });
         return {
           moduleId: m.id,
           moduleNumber: m.moduleNumber,
           moduleName: m.name,
           moduleDate: m.date,
-          baseValue: m.price,
+          baseValue: price,
           paid,
           balance,
         };

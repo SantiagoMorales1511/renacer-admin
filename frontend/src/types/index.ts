@@ -72,6 +72,7 @@ export interface Student {
   status: StudentStatus;
   enrolledAt: string;
   notes?: string | null;
+  customPrice?: number | null;
   group?: Group | null;
 }
 

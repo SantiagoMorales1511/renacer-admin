@@ -128,21 +128,37 @@ model Group {
 }
 
 model Student {
-  id         String        @id @default(uuid())
-  fullName   String
-  phone      String?
-  email      String?
-  document   String?
-  groupId    String?
-  status     StudentStatus @default(ACTIVE)
-  enrolledAt DateTime      @default(now())
-  notes      String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id          String        @id @default(uuid())
+  fullName    String
+  phone       String?
+  email       String?
+  document    String?
+  groupId     String?
+  status      StudentStatus @default(ACTIVE)
+  enrolledAt  DateTime      @default(now())
+  notes       String?
+  customPrice Float?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  group       Group?       @relation(fields: [groupId], references: [id])
-  payments    Payment[]
-  attendances Attendance[]
+  group        Group?               @relation(fields: [groupId], references: [id])
+  payments     Payment[]
+  attendances  Attendance[]
+  modulePrices StudentModulePrice[]
+}
+
+model StudentModulePrice {
+  id            String   @id @default(uuid())
+  studentId     String
+  groupModuleId String
+  price         Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupModule GroupModule @relation(fields: [groupModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, groupModuleId])
 }
 
 model ProgramModuleTemplate {
@@ -173,10 +189,11 @@ model GroupModule {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  group    Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  program  Program        @relation(fields: [programId], references: [id])
-  sessions ClassSession[]
-  payments Payment[]
+  group         Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  program       Program              @relation(fields: [programId], references: [id])
+  sessions      ClassSession[]
+  payments      Payment[]
+  studentPrices StudentModulePrice[]
 
   @@unique([groupId, moduleNumber])
 }

@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { AttendanceStatus, ProgramType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseDateOnly } from '../common/date.util';
+import { modulePriceFor } from '../common/student-price.util';
 import { CreateGroupDto, UpdateGroupDto } from './dto/group.dto';
 import { SaveMatrixAttendanceDto } from './dto/matrix-attendance.dto';
 
@@ -50,7 +51,7 @@ export class GroupsService {
     const group = await this.prisma.group.findUnique({
       where: { id },
       include: {
-        students: { orderBy: { fullName: 'asc' } },
+        students: { orderBy: { fullName: 'asc' }, include: { modulePrices: true } },
         sessions: { include: { attendances: true } },
         payments: true,
       },
@@ -94,12 +95,13 @@ export class GroupsService {
       fullName: student.fullName,
       cells: modules.map((m) => {
         const attendance = attendanceByStudent.get(student.id)?.get(m.id) ?? null;
+        const price = modulePriceFor(student, m);
         return {
           moduleId: m.id,
           attendance,
           status: this.resolveMatrixCellStatus({
             attendance: attendance ?? undefined,
-            paid: (paymentByStudentModule.get(`${student.id}:${m.id}`) ?? 0) >= m.price && m.price > 0,
+            paid: (paymentByStudentModule.get(`${student.id}:${m.id}`) ?? 0) >= price && price > 0,
           }),
         };
       }),

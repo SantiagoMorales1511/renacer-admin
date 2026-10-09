@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { StudentsService } from './students.service';
-import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
+import { CreateStudentDto, StudentPricingDto, UpdateStudentDto } from './dto/student.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -45,6 +45,18 @@ export class StudentsController {
   @Roles(Role.ASSISTANT)
   update(@Param('id') id: string, @Body() dto: UpdateStudentDto) {
     return this.studentsService.update(id, dto);
+  }
+
+  @Patch(':id/pricing')
+  @Roles(Role.ADMIN)
+  async setPricing(
+    @Param('id') id: string,
+    @Body() dto: StudentPricingDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    const res = await this.studentsService.setPricing(id, dto);
+    await this.audit.log({ userId: user.id, action: 'update', entity: 'student_pricing', entityId: id });
+    return res;
   }
 
   @Delete(':id')

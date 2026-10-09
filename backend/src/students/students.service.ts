@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { moduleBalance } from '../common/module-balance.util';
-import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
+import { modulePriceFor } from '../common/student-price.util';
+import { CreateStudentDto, StudentPricingDto, UpdateStudentDto } from './dto/student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -24,6 +25,7 @@ export class StudentsService {
       where: { id },
       include: {
         group: true,
+        modulePrices: true,
         payments: { include: { groupModule: true }, orderBy: { paidAt: 'desc' } },
         attendances: {
           include: { session: { include: { groupModule: true } } },
@@ -55,15 +57,18 @@ export class StudentsService {
         .reduce((sum, p) => sum + p.amount, 0);
       const attended = attendedModuleIds.has(m.id);
       const dictated = m.date ? m.date <= now : true;
-      const { balance } = moduleBalance({ price: m.price, paid, attended, dictated });
+      const price = modulePriceFor(student, m);
+      const { balance } = moduleBalance({ price, paid, attended, dictated });
       return {
         moduleId: m.id,
         number: m.moduleNumber,
         name: m.name,
-        baseValue: m.price,
+        baseValue: price,
+        groupPrice: m.price,
+        hasModulePrice: student.modulePrices.some((p) => p.groupModuleId === m.id),
         paid,
         balance,
-        isPaid: paid >= m.price && m.price > 0,
+        isPaid: paid >= price && price > 0,
         attended,
         dictated,
       };
@@ -90,14 +95,57 @@ export class StudentsService {
   }
 
   async update(id: string, dto: UpdateStudentDto) {
-    await this.ensureExists(id);
-    return this.prisma.student.update({
+    const existing = await this.ensureExists(id);
+    const updated = await this.prisma.student.update({
       where: { id },
       data: {
         ...dto,
         enrolledAt: dto.enrolledAt ? new Date(dto.enrolledAt) : undefined,
       },
     });
+
+    if (dto.groupId !== undefined && (dto.groupId || null) !== existing.groupId) {
+      await this.prisma.studentModulePrice.deleteMany({ where: { studentId: id } });
+    }
+
+    return updated;
+  }
+
+  async setPricing(id: string, dto: StudentPricingDto) {
+    await this.ensureExists(id);
+    const price = dto.price ?? null;
+
+    if (dto.scope === 'all') {
+      await this.prisma.$transaction([
+        this.prisma.student.update({ where: { id }, data: { customPrice: price } }),
+        this.prisma.studentModulePrice.deleteMany({ where: { studentId: id } }),
+      ]);
+      return this.findOne(id);
+    }
+
+    if (!dto.groupModuleId) {
+      throw new BadRequestException('Falta el módulo');
+    }
+    const groupModule = await this.prisma.groupModule.findUnique({
+      where: { id: dto.groupModuleId },
+    });
+    if (!groupModule) {
+      throw new NotFoundException('Módulo no encontrado');
+    }
+
+    if (price === null) {
+      await this.prisma.studentModulePrice.deleteMany({
+        where: { studentId: id, groupModuleId: dto.groupModuleId },
+      });
+    } else {
+      await this.prisma.studentModulePrice.upsert({
+        where: { studentId_groupModuleId: { studentId: id, groupModuleId: dto.groupModuleId } },
+        update: { price },
+        create: { studentId: id, groupModuleId: dto.groupModuleId, price },
+      });
+    }
+
+    return this.findOne(id);
   }
 
   async remove(id: string) {
@@ -111,5 +159,6 @@ export class StudentsService {
     if (!s) {
       throw new NotFoundException('Estudiante no encontrado');
     }
+    return s;
   }
 }

@@ -145,6 +145,10 @@ export function PaymentsPage() {
     (m: { moduleId: string }) => m.moduleId === selectedModuleId,
   );
 
+  const studentPrice = (moduleId: string, fallback: number) =>
+    studentDetail?.moduleSummary?.find((m: { moduleId: string }) => m.moduleId === moduleId)
+      ?.baseValue ?? fallback;
+
   const editGroupId = students.find((s) => s.id === editStudentId)?.groupId ?? '';
   const { data: editModules = [] } = useQuery({
     queryKey: ['group', editGroupId, 'modules'],
@@ -544,7 +548,9 @@ export function PaymentsPage() {
                     {!selectedStudentId ? 'Elige un estudiante primero' : selectedGroupId ? 'Selecciona' : 'El estudiante no tiene grupo'}
                   </option>
                   {modules.map((m) => (
-                    <option key={m.id} value={m.id}>{m.moduleNumber}. {m.name} — {money(m.price)}</option>
+                    <option key={m.id} value={m.id}>
+                      {m.moduleNumber}. {m.name} — {money(studentPrice(m.id, m.price))}
+                    </option>
                   ))}
                 </Select>
               </Field>
