@@ -1,4 +1,5 @@
 import { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { Search, X } from 'lucide-react';
 import { formatThousands } from '../../utils/format';
 
 export function Field({
@@ -41,6 +42,39 @@ export function MoneyInput({
       onChange={(e) => onChange(formatThousands(e.target.value))}
       className="input"
     />
+  );
+}
+
+export function SearchInput({
+  value,
+  onChange,
+  placeholder = 'Buscar',
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="relative">
+      <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="input pl-9 pr-9"
+      />
+      {value && (
+        <button
+          type="button"
+          aria-label="Limpiar búsqueda"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted hover:bg-canvas"
+          onClick={() => onChange('')}
+        >
+          <X size={14} />
+        </button>
+      )}
+    </div>
   );
 }
 

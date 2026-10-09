@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Sparkles, Pencil, Paperclip, X } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, MoneyInput, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, Input, MoneyInput, SearchInput, Select, Textarea } from '../components/ui/Form';
 import { Combobox } from '../components/ui/Combobox';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
@@ -12,13 +12,14 @@ import {
   formatDate,
   parseThousands,
   formatThousands,
+  matchesSearch,
   todayInput,
   dateInputValue,
   paymentMethodLabel,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
 } from '../utils/format';
-import type { GroupModule, OneDayEvent, Payment, Student } from '../types';
+import type { Group, GroupModule, OneDayEvent, Payment, Student } from '../types';
 
 const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
 
@@ -31,6 +32,9 @@ export function PaymentsPage() {
   const [otherOpen, setOtherOpen] = useState(false);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [search, setSearch] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
+  const [methodFilter, setMethodFilter] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [editing, setEditing] = useState<Payment | null>(null);
@@ -117,7 +121,7 @@ export function PaymentsPage() {
     };
   }, [viewing]);
 
-  const { data: payments = [], isLoading } = useQuery({
+  const { data: allPayments = [], isLoading } = useQuery({
     queryKey: ['payments', from, to],
     queryFn: async () =>
       (await api.get<Payment[]>('/payments', { params: { from: from || undefined, to: to || undefined } })).data,
@@ -127,6 +131,34 @@ export function PaymentsPage() {
     queryKey: ['students'],
     queryFn: async () => (await api.get<Student[]>('/students')).data,
   });
+
+  const { data: groups = [] } = useQuery({
+    queryKey: ['groups'],
+    queryFn: async () => (await api.get<Group[]>('/groups')).data,
+  });
+
+  const payments = allPayments.filter((p) => {
+    if (groupFilter === 'OTRO' ? !!p.studentId : groupFilter && p.groupId !== groupFilter) return false;
+    if (methodFilter && p.method !== methodFilter) return false;
+    return matchesSearch(
+      search,
+      p.student?.fullName,
+      p.concept,
+      p.group?.name,
+      p.groupModule?.name,
+      p.observation,
+    );
+  });
+
+  const filtersActive = !!(search || groupFilter || methodFilter || from || to);
+
+  function clearFilters() {
+    setSearch('');
+    setGroupFilter('');
+    setMethodFilter('');
+    setFrom('');
+    setTo('');
+  }
 
   const selectedGroupId = students.find((s) => s.id === selectedStudentId)?.groupId ?? '';
   const { data: modules = [] } = useQuery({
@@ -421,16 +453,45 @@ export function PaymentsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <Field label="Desde">
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        </Field>
-        <Field label="Hasta">
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        </Field>
-        <div className="ml-auto text-sm">
-          <span className="text-muted">Total filtrado: </span>
-          <span className="font-semibold text-petrol-600">{money(total)}</span>
+      <div className="mb-4 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por estudiante, concepto u observación"
+          />
+          <Select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
+            <option value="">Todos los grupos</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+            <option value="OTRO">Otros ingresos</option>
+          </Select>
+          <Select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)}>
+            <option value="">Todos los métodos</option>
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Desde">
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </Field>
+          <Field label="Hasta">
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+          {filtersActive && (
+            <button type="button" className="btn-ghost" onClick={clearFilters}>
+              Limpiar filtros
+            </button>
+          )}
+          <div className="ml-auto text-sm">
+            <span className="text-muted">
+              {filtersActive ? `${payments.length} de ${allPayments.length} · Total filtrado: ` : 'Total: '}
+            </span>
+            <span className="font-semibold text-petrol-600">{money(total)}</span>
+          </div>
         </div>
       </div>
 
@@ -438,7 +499,7 @@ export function PaymentsPage() {
         breakpoint="lg"
         rows={isLoading ? [] : payments}
         rowKey={(p) => p.id}
-        empty="Sin pagos registrados."
+        empty={filtersActive ? 'Ningún pago coincide con la búsqueda.' : 'Sin pagos registrados.'}
         columns={[
           { header: 'Fecha', cell: (p) => formatDate(p.paidAt) },
           {

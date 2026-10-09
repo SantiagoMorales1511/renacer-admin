@@ -82,6 +82,20 @@ export function labelize(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
+export function normalizeText(value?: string | null): string {
+  return (value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function matchesSearch(search: string, ...fields: (string | null | undefined)[]): boolean {
+  const term = normalizeText(search).trim();
+  if (!term) return true;
+  const haystack = normalizeText(fields.filter(Boolean).join(' '));
+  return term.split(/\s+/).every((word) => haystack.includes(word));
+}
+
 export function sessionLabel(session: {
   title?: string | null;
   group?: { name: string } | null;

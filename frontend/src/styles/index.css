@@ -68,6 +68,12 @@ body {
     @apply w-full rounded-lg border border-transparent bg-petrol-50/35 px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-petrol-400/25 focus:border-petrol-500 dark:border-line/40 dark:bg-surface-tint dark:placeholder:text-muted/70 dark:focus:border-petrol-400 dark:focus:ring-petrol-400/20;
   }
 
+  .input[type='search']::-webkit-search-cancel-button,
+  .input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   .label {
     @apply block text-sm font-medium text-ink mb-1.5;
   }

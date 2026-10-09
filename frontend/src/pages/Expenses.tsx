@@ -2,11 +2,11 @@ import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, Input, SearchInput, Select, Textarea } from '../components/ui/Form';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
-import { money, formatDate, labelize, EXPENSE_CATEGORIES } from '../utils/format';
+import { money, formatDate, labelize, matchesSearch, EXPENSE_CATEGORIES } from '../utils/format';
 import type { Expense, Group } from '../types';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -22,10 +22,15 @@ export function ExpensesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const isAdmin = user?.role === 'ADMIN';
   const canRegister = isAdmin || !!user?.canRegisterExpenses;
 
-  const { data: expenses = [], isLoading } = useQuery({
+  const { data: allExpenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: async () => (await api.get<Expense[]>('/expenses')).data,
     enabled: isAdmin,
@@ -98,7 +103,27 @@ export function ExpensesPage() {
     });
   }
 
+  const expenses = allExpenses.filter((e) => {
+    if (categoryFilter && e.category !== categoryFilter) return false;
+    if (groupFilter === 'SIN_GRUPO' ? !!e.groupId : groupFilter && e.groupId !== groupFilter) {
+      return false;
+    }
+    const day = e.date.slice(0, 10);
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    return matchesSearch(search, e.description, e.group?.name, labelize(e.category));
+  });
+
+  const filtersActive = !!(search || categoryFilter || groupFilter || from || to);
   const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+  function clearFilters() {
+    setSearch('');
+    setCategoryFilter('');
+    setGroupFilter('');
+    setFrom('');
+    setTo('');
+  }
 
   return (
     <div>
@@ -122,15 +147,52 @@ export function ExpensesPage() {
 
       {isAdmin ? (
         <>
-          <div className="mb-4 text-sm">
-            <span className="text-muted">Total: </span>
-            <span className="font-semibold text-red-600">{money(total)}</span>
+          <div className="mb-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por descripción o grupo"
+              />
+              <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <option value="">Todas las categorías</option>
+                {EXPENSE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{labelize(c)}</option>
+                ))}
+              </Select>
+              <Select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
+                <option value="">Todos los grupos</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+                <option value="SIN_GRUPO">Sin grupo</option>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Desde">
+                <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              </Field>
+              <Field label="Hasta">
+                <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              </Field>
+              {filtersActive && (
+                <button type="button" className="btn-ghost" onClick={clearFilters}>
+                  Limpiar filtros
+                </button>
+              )}
+              <div className="ml-auto text-sm">
+                <span className="text-muted">
+                  {filtersActive ? `${expenses.length} de ${allExpenses.length} · Total filtrado: ` : 'Total: '}
+                </span>
+                <span className="font-semibold text-red-600">{money(total)}</span>
+              </div>
+            </div>
           </div>
           <DataTable
             breakpoint="md"
             rows={isLoading ? [] : expenses}
             rowKey={(e) => e.id}
-            empty="Sin gastos."
+            empty={filtersActive ? 'Ningún gasto coincide con la búsqueda.' : 'Sin gastos.'}
             columns={[
               { header: 'Fecha', cell: (e) => formatDate(e.date) },
               { header: 'Categoría', cell: (e) => labelize(e.category) },
