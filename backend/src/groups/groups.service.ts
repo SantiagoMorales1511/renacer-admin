@@ -182,6 +182,65 @@ export class GroupsService {
     return this.attendanceMatrix(groupId);
   }
 
+  async moduleStats(id: string) {
+    const group = await this.prisma.group.findUnique({
+      where: { id },
+      include: {
+        students: { include: { modulePrices: true } },
+        modules: { orderBy: { moduleNumber: 'asc' } },
+        sessions: { include: { attendances: true } },
+        payments: true,
+      },
+    });
+    if (!group) {
+      throw new NotFoundException('Grupo no encontrado');
+    }
+
+    const paidByStudentModule = new Map<string, number>();
+    for (const payment of group.payments) {
+      if (!payment.studentId || !payment.groupModuleId) continue;
+      const key = `${payment.studentId}:${payment.groupModuleId}`;
+      paidByStudentModule.set(key, (paidByStudentModule.get(key) ?? 0) + payment.amount);
+    }
+
+    const attended = new Set<string>();
+    for (const session of group.sessions) {
+      if (!session.groupModuleId) continue;
+      for (const att of session.attendances) {
+        if (att.status !== AttendanceStatus.PRESENT) continue;
+        attended.add(`${att.studentId}:${session.groupModuleId}`);
+      }
+    }
+
+    const modules = group.modules.map((m) => {
+      let attendedCount = 0;
+      let paidFull = 0;
+      let paidPartial = 0;
+      let paidNone = 0;
+      for (const student of group.students) {
+        if (attended.has(`${student.id}:${m.id}`)) attendedCount += 1;
+        const price = modulePriceFor(student, m);
+        const paid = paidByStudentModule.get(`${student.id}:${m.id}`) ?? 0;
+        if (price > 0 && paid <= 0) paidNone += 1;
+        else if (price > 0 && paid < price) paidPartial += 1;
+        else paidFull += 1;
+      }
+      return {
+        moduleId: m.id,
+        moduleNumber: m.moduleNumber,
+        name: m.name,
+        date: m.date,
+        students: group.students.length,
+        attended: attendedCount,
+        paidFull,
+        paidPartial,
+        paidNone,
+      };
+    });
+
+    return { students: group.students.length, modules };
+  }
+
   private resolveMatrixCellStatus(params: {
     attendance?: AttendanceStatus;
     paid: boolean;

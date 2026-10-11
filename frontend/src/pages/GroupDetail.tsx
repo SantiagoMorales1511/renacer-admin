@@ -87,7 +87,25 @@ function TabButton({
   );
 }
 
+interface ModuleStat {
+  moduleId: string;
+  moduleNumber: number;
+  name: string;
+  date?: string | null;
+  students: number;
+  attended: number;
+  paidFull: number;
+  paidPartial: number;
+  paidNone: number;
+}
+
 function Summary({ data }: { data: any }) {
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['group', data.id, 'module-stats'],
+    queryFn: async () =>
+      (await api.get<{ students: number; modules: ModuleStat[] }>(`/groups/${data.id}/module-stats`)).data,
+  });
+
   return (
     <div>
       <div className="mb-4 card p-5">
@@ -110,6 +128,49 @@ function Summary({ data }: { data: any }) {
           </div>
         </div>
         {data.notes && <p className="mt-4 text-sm text-muted">{data.notes}</p>}
+      </div>
+
+      <h3 className="mb-3 text-sm font-semibold">Conteo por módulo</h3>
+      <div className="mb-6">
+        <DataTable
+          breakpoint="md"
+          rows={statsLoading ? [] : stats?.modules ?? []}
+          rowKey={(m) => m.moduleId}
+          empty={statsLoading ? 'Cargando...' : 'Sin módulos.'}
+          columns={[
+            {
+              header: 'Módulo',
+              primary: true,
+              className: 'font-medium',
+              cell: (m) => `${m.moduleNumber}. ${m.name}`,
+            },
+            { header: 'Fecha', cell: (m) => (m.date ? formatDate(m.date) : '-') },
+            {
+              header: 'Asistieron',
+              align: 'right',
+              className: 'font-medium',
+              cell: (m) => `${m.attended} de ${m.students}`,
+            },
+            {
+              header: 'Pago completo',
+              align: 'right',
+              className: 'font-medium text-emerald-600',
+              cell: (m) => m.paidFull,
+            },
+            {
+              header: 'Abono parcial',
+              align: 'right',
+              className: 'font-medium text-amber-600',
+              cell: (m) => m.paidPartial,
+            },
+            {
+              header: 'Sin pago',
+              align: 'right',
+              className: 'font-medium text-red-600',
+              cell: (m) => m.paidNone,
+            },
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

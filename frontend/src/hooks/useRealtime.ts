@@ -4,9 +4,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { SOCKET_URL } from '../services/api';
 
 const EVENT_QUERY_MAP: Record<string, string[]> = {
-  payment_created: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
-  payment_updated: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
-  payment_deleted: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera'],
+  payment_created: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera', 'group'],
+  payment_updated: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera', 'group'],
+  payment_deleted: ['payments', 'daily-cash', 'dashboard', 'assistant-home', 'cash-flow', 'reports', 'student', 'cartera', 'group'],
   attendance_updated: ['session', 'assistant-home', 'student', 'reports', 'cartera', 'group'],
   student_created: ['students', 'dashboard', 'assistant-home', 'group'],
   group_created: ['groups', 'dashboard'],

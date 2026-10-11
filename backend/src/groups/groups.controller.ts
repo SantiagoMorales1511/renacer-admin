@@ -41,6 +41,11 @@ export class GroupsController {
     return this.groupsService.attendanceMatrix(id);
   }
 
+  @Get(':id/module-stats')
+  moduleStats(@Param('id') id: string) {
+    return this.groupsService.moduleStats(id);
+  }
+
   @Patch(':id/attendance-matrix')
   @Roles(Role.ASSISTANT)
   async saveMatrixAttendance(
