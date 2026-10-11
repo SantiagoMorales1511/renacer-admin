@@ -15,7 +15,6 @@ import { Plus, ChevronLeft, ChevronRight, Clock, CalendarDays, Sparkles } from '
 import clsx from 'clsx';
 import { api } from '../services/api';
 import { PageHeader } from '../components/ui/Form';
-import { useAuth } from '../store/auth';
 import { sessionLabel, sessionSubtitle } from '../utils/format';
 import type { ClassSession, Group, GroupModule, OneDayEvent } from '../types';
 import { buildCalendarItems, itemsForDay } from '../components/calendar/types';
@@ -37,9 +36,6 @@ type SessionFormState = {
 
 export function CalendarPage() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
-
   const [cursor, setCursor] = useState(new Date());
   const [mobileView, setMobileView] = useState<'agenda' | 'month'>('agenda');
 
@@ -378,7 +374,6 @@ export function CalendarPage() {
       {preview && (
         <CalendarItemPreview
           item={preview}
-          isAdmin={isAdmin}
           onEdit={() => startEdit(preview)}
           onDelete={() => confirmDelete(preview)}
           onClose={() => setPreview(null)}

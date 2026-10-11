@@ -26,13 +26,11 @@ const KIND_LABELS: Record<CalendarItem['kind'], string> = {
 
 export function CalendarItemPreview({
   item,
-  isAdmin,
   onEdit,
   onDelete,
   onClose,
 }: {
   item: CalendarItem;
-  isAdmin: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -132,11 +130,9 @@ export function CalendarItemPreview({
           <button className="btn-ghost" onClick={goToDetail}>
             {detailLabel}
           </button>
-          {isAdmin && (
-            <button className="btn-ghost text-red-600" onClick={onDelete}>
+          <button className="btn-ghost text-red-600" onClick={onDelete}>
               Eliminar
             </button>
-          )}
         </div>
       </div>
     </Sheet>

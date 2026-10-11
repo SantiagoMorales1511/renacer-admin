@@ -87,7 +87,7 @@ export class PaymentsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdatePaymentDto,
@@ -100,7 +100,7 @@ export class PaymentsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.paymentsService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'payment', entityId: id });

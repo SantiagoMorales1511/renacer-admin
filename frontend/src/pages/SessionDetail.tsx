@@ -6,7 +6,6 @@ import { api } from '../services/api';
 import { PageHeader, Select } from '../components/ui/Form';
 import { Table, Td } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
-import { useAuth } from '../store/auth';
 import { SessionFormModal } from '../components/calendar/SessionFormModal';
 import { formatDate, sessionLabel, sessionSubtitle } from '../utils/format';
 import type { AttendanceStatus, Group, OneDayEvent } from '../types';
@@ -22,8 +21,6 @@ export function SessionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
   const [rows, setRows] = useState<Row[]>([]);
   const [editOpen, setEditOpen] = useState(false);
 
@@ -127,8 +124,7 @@ export function SessionDetailPage() {
             <button className="btn-ghost" onClick={() => setEditOpen(true)}>
               <Pencil size={16} /> Editar
             </button>
-            {isAdmin && (
-              <button
+            <button
                 className="btn-ghost text-red-600"
                 onClick={() => {
                   if (confirm('¿Eliminar esta sesión?')) removeSession.mutate();
@@ -136,7 +132,6 @@ export function SessionDetailPage() {
               >
                 <Trash2 size={16} /> Eliminar
               </button>
-            )}
           </div>
         }
       />

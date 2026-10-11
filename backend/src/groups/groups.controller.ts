@@ -80,7 +80,7 @@ export class GroupsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.groupsService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'group', entityId: id });

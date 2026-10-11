@@ -1,10 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { Role } from '@prisma/client';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto/expense.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators/roles.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator';
 import { AuditService } from '../common/audit/audit.service';
@@ -20,7 +18,7 @@ export class ExpensesController {
   ) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Permissions('canRegisterExpenses')
   findAll(
     @Query('from') from?: string,
     @Query('to') to?: string,
@@ -39,7 +37,7 @@ export class ExpensesController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Permissions('canRegisterExpenses')
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateExpenseDto,
@@ -52,7 +50,7 @@ export class ExpensesController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Permissions('canRegisterExpenses')
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.expensesService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'expense', entityId: id });

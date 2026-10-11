@@ -12,13 +12,13 @@ export class ModuleTemplatesController {
   constructor(private programsService: ProgramsService) {}
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   update(@Param('id') id: string, @Body() dto: UpdateModuleTemplateDto) {
     return this.programsService.updateTemplate(id, dto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   remove(@Param('id') id: string) {
     return this.programsService.removeTemplate(id);
   }

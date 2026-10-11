@@ -7,14 +7,12 @@ import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/For
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
-import { useAuth } from '../store/auth';
 import { PROGRAM_TYPE_LABELS } from '../utils/format';
 import type { Group, Program } from '../types';
 
 const STATUSES = ['ACTIVE', 'PAUSED', 'FINISHED'];
 
 export function GroupsPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -129,8 +127,7 @@ export function GroupsPage() {
                 >
                   <Pencil size={16} />
                 </button>
-                {user?.role === 'ADMIN' && (
-                  <button
+                <button
                     className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => {
                       if (confirm(`¿Eliminar el grupo ${g.name}?`)) remove.mutate(g.id);
@@ -138,7 +135,6 @@ export function GroupsPage() {
                   >
                     <Trash2 size={16} />
                   </button>
-                )}
               </div>
             ),
           },

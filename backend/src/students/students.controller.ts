@@ -48,7 +48,7 @@ export class StudentsController {
   }
 
   @Patch(':id/pricing')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async setPricing(
     @Param('id') id: string,
     @Body() dto: StudentPricingDto,
@@ -60,7 +60,7 @@ export class StudentsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.studentsService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'student', entityId: id });

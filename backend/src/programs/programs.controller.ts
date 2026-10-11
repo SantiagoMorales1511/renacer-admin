@@ -33,7 +33,7 @@ export class ProgramsController {
   }
 
   @Post(':id/module-templates')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async createTemplate(@Param('id') id: string, @Body() dto: CreateModuleTemplateDto) {
     return this.programsService.createTemplate(id, dto);
   }

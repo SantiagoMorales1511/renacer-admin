@@ -53,7 +53,7 @@ export class SessionsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   remove(@Param('id') id: string) {
     return this.sessionsService.remove(id);
   }

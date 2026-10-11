@@ -7,13 +7,11 @@ import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/For
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
-import { useAuth } from '../store/auth';
 import type { Group, Student } from '../types';
 
 const STATUSES = ['ACTIVE', 'PAUSED', 'WITHDRAWN', 'FINISHED'];
 
 export function StudentsPage() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
@@ -131,8 +129,7 @@ export function StudentsPage() {
                 >
                   <Pencil size={16} />
                 </button>
-                {user?.role === 'ADMIN' && (
-                  <button
+                <button
                     className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => {
                       if (confirm(`¿Eliminar a ${s.fullName}?`)) remove.mutate(s.id);
@@ -140,7 +137,6 @@ export function StudentsPage() {
                   >
                     <Trash2 size={16} />
                   </button>
-                )}
               </div>
             ),
           },

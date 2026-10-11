@@ -7,7 +7,6 @@ import { PageHeader, Field, Input, Select, Textarea } from '../components/ui/For
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
-import { useAuth } from '../store/auth';
 import {
   formatDate,
   money,
@@ -22,7 +21,6 @@ const EVENT_STATUSES = ['SCHEDULED', 'DONE', 'CANCELLED'];
 
 export function ProgramDetailPage() {
   const { id } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -143,7 +141,6 @@ export function ProgramDetailPage() {
           onDelete={(ev) => {
             if (confirm(`¿Eliminar el evento "${ev.title}"?`)) removeEvent.mutate(ev.id);
           }}
-          canDelete={user?.role === 'ADMIN'}
         />
       ) : (
         <div className="space-y-8">
@@ -183,11 +180,9 @@ export function ProgramDetailPage() {
                 <h3 className="text-sm font-semibold">Plantillas de módulos</h3>
                 <p className="text-xs text-muted">Se copian a cada grupo nuevo. Editar aquí no afecta a los grupos existentes.</p>
               </div>
-              {user?.role === 'ADMIN' && (
-                <button className="btn-primary" onClick={() => { setEditingTemplate(null); setTemplateOpen(true); }}>
+              <button className="btn-primary" onClick={() => { setEditingTemplate(null); setTemplateOpen(true); }}>
                   <Plus size={16} /> Nueva plantilla
                 </button>
-              )}
             </div>
             <DataTable
               breakpoint="sm"
@@ -205,8 +200,7 @@ export function ProgramDetailPage() {
                 {
                   header: 'Acciones',
                   align: 'right',
-                  cell: (t) =>
-                    user?.role === 'ADMIN' ? (
+                  cell: (t) => (
                       <div className="flex justify-end gap-1">
                         <button
                           className="rounded-lg p-1.5 text-muted hover:bg-canvas"
@@ -226,7 +220,7 @@ export function ProgramDetailPage() {
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    ) : null,
+                    ),
                 },
               ]}
             />
@@ -359,13 +353,11 @@ function EventsSection({
   onNew,
   onEdit,
   onDelete,
-  canDelete,
 }: {
   events: OneDayEvent[];
   onNew: () => void;
   onEdit: (ev: OneDayEvent) => void;
   onDelete: (ev: OneDayEvent) => void;
-  canDelete: boolean;
 }) {
   return (
     <section>
@@ -404,14 +396,12 @@ function EventsSection({
                 <button className="rounded-lg p-1.5 text-muted hover:bg-canvas" onClick={() => onEdit(ev)}>
                   <Pencil size={16} />
                 </button>
-                {canDelete && (
-                  <button
+                <button
                     className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => onDelete(ev)}
                   >
                     <Trash2 size={16} />
                   </button>
-                )}
               </div>
             ),
           },

@@ -9,7 +9,6 @@ import { Table, Td } from '../components/ui/Table';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
-import { useAuth } from '../store/auth';
 import {
   formatDate,
   money,
@@ -151,7 +150,6 @@ function Summary({ data }: { data: any }) {
 }
 
 function GroupModulesView({ groupId }: { groupId: string }) {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<GroupModule | null>(null);
@@ -287,8 +285,7 @@ function GroupModulesView({ groupId }: { groupId: string }) {
                 >
                   <Ban size={16} />
                 </button>
-                {user?.role === 'ADMIN' && (
-                  <button
+                <button
                     className={clsx(
                       'rounded-lg p-1.5',
                       canDelete(m)
@@ -303,7 +300,6 @@ function GroupModulesView({ groupId }: { groupId: string }) {
                   >
                     <Trash2 size={16} />
                   </button>
-                )}
               </div>
             ),
           },

@@ -6,7 +6,6 @@ import { PageHeader, Field, Input, MoneyInput, SearchInput, Select, Textarea } f
 import { Combobox } from '../components/ui/Combobox';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
-import { useAuth } from '../store/auth';
 import {
   money,
   formatDate,
@@ -26,7 +25,6 @@ const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
 type FieldErrors = Record<string, string>;
 
 export function PaymentsPage() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [otherOpen, setOtherOpen] = useState(false);
@@ -551,8 +549,7 @@ export function PaymentsPage() {
           {
             header: 'Acciones',
             align: 'right',
-            cell: (p) =>
-              user?.role === 'ADMIN' ? (
+            cell: (p) => (
                 <div className="flex items-center justify-end gap-1">
                   <button
                     className="rounded-lg p-1.5 text-petrol-600 hover:bg-petrol-50 dark:hover:bg-petrol-950/30"
@@ -569,7 +566,7 @@ export function PaymentsPage() {
                     <Trash2 size={16} />
                   </button>
                 </div>
-              ) : null,
+              ),
           },
         ]}
       />

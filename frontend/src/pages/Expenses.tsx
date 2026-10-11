@@ -33,7 +33,7 @@ export function ExpensesPage() {
   const { data: allExpenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: async () => (await api.get<Expense[]>('/expenses')).data,
-    enabled: isAdmin,
+    enabled: canRegister,
   });
 
   const { data: groups = [] } = useQuery({
@@ -145,7 +145,7 @@ export function ExpensesPage() {
         </div>
       )}
 
-      {isAdmin ? (
+      {canRegister ? (
         <>
           <div className="mb-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

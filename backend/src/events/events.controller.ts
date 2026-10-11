@@ -56,7 +56,7 @@ export class EventsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.eventsService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'event', entityId: id });

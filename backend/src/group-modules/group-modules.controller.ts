@@ -58,7 +58,7 @@ export class GroupModulesController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ASSISTANT)
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const res = await this.groupModulesService.remove(id);
     await this.audit.log({ userId: user.id, action: 'delete', entity: 'group_module', entityId: id });
