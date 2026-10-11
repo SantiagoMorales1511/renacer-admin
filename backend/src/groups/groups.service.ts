@@ -212,33 +212,44 @@ export class GroupsService {
       }
     }
 
+    const now = new Date();
+    const students = [...group.students].sort((a, b) => a.fullName.localeCompare(b.fullName));
+
     const modules = group.modules.map((m) => {
-      let attendedCount = 0;
-      let paidFull = 0;
-      let paidPartial = 0;
-      let paidNone = 0;
-      for (const student of group.students) {
-        if (attended.has(`${student.id}:${m.id}`)) attendedCount += 1;
+      const people = students.map((student) => {
+        const key = `${student.id}:${m.id}`;
         const price = modulePriceFor(student, m);
-        const paid = paidByStudentModule.get(`${student.id}:${m.id}`) ?? 0;
-        if (price > 0 && paid <= 0) paidNone += 1;
-        else if (price > 0 && paid < price) paidPartial += 1;
-        else paidFull += 1;
-      }
+        const paid = paidByStudentModule.get(key) ?? 0;
+        const payStatus: 'full' | 'partial' | 'none' =
+          price > 0 && paid <= 0 ? 'none' : price > 0 && paid < price ? 'partial' : 'full';
+        return {
+          studentId: student.id,
+          fullName: student.fullName,
+          attended: attended.has(key),
+          price,
+          paid,
+          balance: Math.max(price - paid, 0),
+          payStatus,
+        };
+      });
+      const anyPaid = people.some((p) => p.paid > 0);
       return {
         moduleId: m.id,
         moduleNumber: m.moduleNumber,
         name: m.name,
         date: m.date,
-        students: group.students.length,
-        attended: attendedCount,
-        paidFull,
-        paidPartial,
-        paidNone,
+        status: m.status,
+        upcoming: !!m.date && m.date > now && !anyPaid,
+        students: people.length,
+        attended: people.filter((p) => p.attended).length,
+        paidFull: people.filter((p) => p.payStatus === 'full').length,
+        paidPartial: people.filter((p) => p.payStatus === 'partial').length,
+        paidNone: people.filter((p) => p.payStatus === 'none').length,
+        people,
       };
     });
 
-    return { students: group.students.length, modules };
+    return { students: students.length, modules };
   }
 
   private resolveMatrixCellStatus(params: {

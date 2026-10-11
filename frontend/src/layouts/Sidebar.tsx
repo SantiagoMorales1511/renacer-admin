@@ -15,6 +15,7 @@ import {
   UserCog,
   Home,
   Layers,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../store/auth';
 import { BrandLogo } from '../components/ui/BrandLogo';
@@ -110,6 +111,7 @@ const ITEMS: NavItem[] = [
   { to: '/modules', label: 'Módulos', icon: BookOpen, tone: 'amber', roles: ['ADMIN'] },
   { to: '/payments', label: 'Pagos', icon: Wallet, tone: 'emerald' },
   { to: '/cartera', label: 'Cartera', icon: Landmark, tone: 'emerald' },
+  { to: '/module-summary', label: 'Resumen de módulos', icon: ClipboardList, tone: 'amber' },
   { to: '/daily-cash', label: 'Caja del día', icon: Coins, tone: 'emerald' },
   { to: '/expenses', label: 'Gastos', icon: Receipt, tone: 'rose', permission: 'canRegisterExpenses' },
   { to: '/cash-flow', label: 'Flujo de caja', icon: TrendingUp, tone: 'petrol', roles: ['ADMIN'] },

@@ -18,6 +18,7 @@ import { ModulesPage } from './pages/Modules';
 import { SessionDetailPage } from './pages/SessionDetail';
 import { PaymentsPage } from './pages/Payments';
 import { CarteraPage } from './pages/Cartera';
+import { ModuleSummaryPage } from './pages/ModuleSummary';
 import { DailyCashPage } from './pages/DailyCash';
 import { ExpensesPage } from './pages/Expenses';
 import { CashFlowPage } from './pages/CashFlow';
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/cartera" element={<CarteraPage />} />
+        <Route path="/module-summary" element={<ModuleSummaryPage />} />
         <Route path="/daily-cash" element={<DailyCashPage />} />
         <Route
           path="/expenses"
