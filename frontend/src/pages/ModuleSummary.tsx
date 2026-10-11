@@ -19,7 +19,7 @@ interface ModulePerson {
   price: number;
   paid: number;
   balance: number;
-  payStatus: PayStatus;
+  payStatus: PayStatus | null;
 }
 
 interface ModuleStat {
@@ -40,7 +40,7 @@ const DETAIL_TITLES: Record<DetailKind, string> = {
   attended: 'Asistieron',
   full: 'Pago completo',
   partial: 'Abono parcial',
-  none: 'Sin pago',
+  none: 'Asistieron sin pagar',
 };
 
 const COUNT_TONES: Record<DetailKind, string> = {

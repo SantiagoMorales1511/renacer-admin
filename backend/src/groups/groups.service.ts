@@ -220,12 +220,19 @@ export class GroupsService {
         const key = `${student.id}:${m.id}`;
         const price = modulePriceFor(student, m);
         const paid = paidByStudentModule.get(key) ?? 0;
-        const payStatus: 'full' | 'partial' | 'none' =
-          price > 0 && paid <= 0 ? 'none' : price > 0 && paid < price ? 'partial' : 'full';
+        const didAttend = attended.has(key);
+        const payStatus: 'full' | 'partial' | 'none' | null =
+          price > 0 && paid <= 0
+            ? didAttend
+              ? 'none'
+              : null
+            : price > 0 && paid < price
+              ? 'partial'
+              : 'full';
         return {
           studentId: student.id,
           fullName: student.fullName,
-          attended: attended.has(key),
+          attended: didAttend,
           price,
           paid,
           balance: Math.max(price - paid, 0),
