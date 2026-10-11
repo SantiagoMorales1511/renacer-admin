@@ -1,5 +1,13 @@
-import { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { Search, X } from 'lucide-react';
+import {
+  ReactNode,
+  SelectHTMLAttributes,
+  InputHTMLAttributes,
+  TextareaHTMLAttributes,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { formatThousands } from '../../utils/format';
 
 export function Field({
@@ -90,6 +98,80 @@ export function Select({
     <select {...props} className="input">
       {children}
     </select>
+  );
+}
+
+export function MultiSelect({
+  values,
+  onChange,
+  options,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (values: string[]) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  const selected = options.filter((o) => values.includes(o.value));
+  const label =
+    selected.length === 0
+      ? placeholder
+      : selected.length <= 2
+        ? selected.map((o) => o.label).join(', ')
+        : `${selected.length} seleccionados`;
+
+  function toggle(value: string) {
+    onChange(values.includes(value) ? values.filter((v) => v !== value) : [...values, value]);
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        className="input flex items-center justify-between gap-2 text-left"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className={selected.length ? 'truncate text-ink' : 'truncate text-muted'}>{label}</span>
+        <ChevronDown size={16} className="shrink-0 text-muted" />
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-line/60 bg-surface py-1 shadow-elevated">
+          {options.map((o) => {
+            const checked = values.includes(o.value);
+            return (
+              <button
+                key={o.value}
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-canvas"
+                onClick={() => toggle(o.value)}
+              >
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                    checked
+                      ? 'border-petrol-600 bg-petrol-600 text-white'
+                      : 'border-line text-transparent'
+                  }`}
+                >
+                  <Check size={12} />
+                </span>
+                <span className="min-w-0 truncate">{o.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

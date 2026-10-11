@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { PageHeader, SearchInput, Select } from '../components/ui/Form';
+import { PageHeader, MultiSelect, SearchInput } from '../components/ui/Form';
 import { StatTile } from '../components/ui/Card';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
@@ -10,10 +10,10 @@ import { money, formatDate, matchesSearch } from '../utils/format';
 import type { Group } from '../types';
 
 export function CarteraPage() {
-  const [groupId, setGroupId] = useState('');
+  const [groupIds, setGroupIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [moduleFilter, setModuleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [moduleFilter, setModuleFilter] = useState<string[]>([]);
 
   const { data: groups = [] } = useQuery({
     queryKey: ['groups'],
@@ -21,9 +21,8 @@ export function CarteraPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['cartera', groupId],
-    queryFn: async () =>
-      (await api.get('/reports/cartera', { params: { groupId: groupId || undefined } })).data,
+    queryKey: ['cartera'],
+    queryFn: async () => (await api.get('/reports/cartera')).data,
   });
 
   if (isLoading || !data) return <p className="text-muted">Cargando...</p>;
@@ -32,20 +31,21 @@ export function CarteraPage() {
   const moduleNumbers = [...new Set(allItems.map((r) => r.moduleNumber))].sort((a, b) => a - b);
 
   const items = allItems.filter((r) => {
-    if (statusFilter && r.paymentStatus !== statusFilter) return false;
-    if (moduleFilter && String(r.moduleNumber) !== moduleFilter) return false;
+    if (groupIds.length && !groupIds.includes(r.groupId)) return false;
+    if (statusFilter.length && !statusFilter.includes(r.paymentStatus)) return false;
+    if (moduleFilter.length && !moduleFilter.includes(String(r.moduleNumber))) return false;
     return matchesSearch(search, r.fullName, r.groupName, r.moduleName, r.phone);
   });
 
-  const filtersActive = !!(search || groupId || statusFilter || moduleFilter);
+  const filtersActive = !!(search || groupIds.length || statusFilter.length || moduleFilter.length);
   const filteredDebt = items.reduce((s, r) => s + r.balance, 0);
   const filteredDebtors = new Set(items.map((r) => r.studentId)).size;
 
   function clearFilters() {
     setSearch('');
-    setGroupId('');
-    setStatusFilter('');
-    setModuleFilter('');
+    setGroupIds([]);
+    setStatusFilter([]);
+    setModuleFilter([]);
   }
 
   return (
@@ -77,25 +77,27 @@ export function CarteraPage() {
             onChange={setSearch}
             placeholder="Buscar por estudiante o celular"
           />
-          <Select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">Todos los grupos</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </Select>
-          <Select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
-            <option value="">Todos los módulos</option>
-            {moduleNumbers.map((n) => (
-              <option key={n} value={String(n)}>Módulo {n}</option>
-            ))}
-          </Select>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">Todos los estados</option>
-            <option value="partial">Abono parcial</option>
-            <option value="none">Sin pago</option>
-          </Select>
+          <MultiSelect
+            values={groupIds}
+            onChange={setGroupIds}
+            placeholder="Todos los grupos"
+            options={groups.map((g) => ({ value: g.id, label: g.name }))}
+          />
+          <MultiSelect
+            values={moduleFilter}
+            onChange={setModuleFilter}
+            placeholder="Todos los módulos"
+            options={moduleNumbers.map((n) => ({ value: String(n), label: `Módulo ${n}` }))}
+          />
+          <MultiSelect
+            values={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Todos los estados"
+            options={[
+              { value: 'partial', label: 'Abono parcial' },
+              { value: 'none', label: 'Sin pago' },
+            ]}
+          />
         </div>
         {filtersActive && (
           <div className="flex items-center gap-3">

@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, SearchInput, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, Input, MultiSelect, SearchInput, Select, Textarea } from '../components/ui/Form';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { useAuth } from '../store/auth';
@@ -23,8 +23,8 @@ export function ExpensesPage() {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [groupFilter, setGroupFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const isAdmin = user?.role === 'ADMIN';
@@ -104,9 +104,10 @@ export function ExpensesPage() {
   }
 
   const expenses = allExpenses.filter((e) => {
-    if (categoryFilter && e.category !== categoryFilter) return false;
-    if (groupFilter === 'SIN_GRUPO' ? !!e.groupId : groupFilter && e.groupId !== groupFilter) {
-      return false;
+    if (categoryFilter.length && !categoryFilter.includes(e.category)) return false;
+    if (groupFilter.length) {
+      const match = groupFilter.some((f) => (f === 'SIN_GRUPO' ? !e.groupId : e.groupId === f));
+      if (!match) return false;
     }
     const day = e.date.slice(0, 10);
     if (from && day < from) return false;
@@ -114,13 +115,13 @@ export function ExpensesPage() {
     return matchesSearch(search, e.description, e.group?.name, labelize(e.category));
   });
 
-  const filtersActive = !!(search || categoryFilter || groupFilter || from || to);
+  const filtersActive = !!(search || categoryFilter.length || groupFilter.length || from || to);
   const total = expenses.reduce((s, e) => s + e.amount, 0);
 
   function clearFilters() {
     setSearch('');
-    setCategoryFilter('');
-    setGroupFilter('');
+    setCategoryFilter([]);
+    setGroupFilter([]);
     setFrom('');
     setTo('');
   }
@@ -154,19 +155,21 @@ export function ExpensesPage() {
                 onChange={setSearch}
                 placeholder="Buscar por descripción o grupo"
               />
-              <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="">Todas las categorías</option>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{labelize(c)}</option>
-                ))}
-              </Select>
-              <Select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
-                <option value="">Todos los grupos</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-                <option value="SIN_GRUPO">Sin grupo</option>
-              </Select>
+              <MultiSelect
+                values={categoryFilter}
+                onChange={setCategoryFilter}
+                placeholder="Todas las categorías"
+                options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: labelize(c) }))}
+              />
+              <MultiSelect
+                values={groupFilter}
+                onChange={setGroupFilter}
+                placeholder="Todos los grupos"
+                options={[
+                  ...groups.map((g) => ({ value: g.id, label: g.name })),
+                  { value: 'SIN_GRUPO', label: 'Sin grupo' },
+                ]}
+              />
             </div>
             <div className="flex flex-wrap items-end gap-3">
               <Field label="Desde">

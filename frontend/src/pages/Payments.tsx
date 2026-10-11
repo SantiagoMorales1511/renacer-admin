@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Sparkles, Pencil, Paperclip, X } from 'lucide-react';
 import { api } from '../services/api';
-import { PageHeader, Field, Input, MoneyInput, SearchInput, Select, Textarea } from '../components/ui/Form';
+import { PageHeader, Field, Input, MoneyInput, MultiSelect, SearchInput, Select, Textarea } from '../components/ui/Form';
 import { Combobox } from '../components/ui/Combobox';
 import { DataTable } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
@@ -31,8 +31,8 @@ export function PaymentsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [search, setSearch] = useState('');
-  const [groupFilter, setGroupFilter] = useState('');
-  const [methodFilter, setMethodFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState<string[]>([]);
+  const [methodFilter, setMethodFilter] = useState<string[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [editing, setEditing] = useState<Payment | null>(null);
@@ -136,8 +136,11 @@ export function PaymentsPage() {
   });
 
   const payments = allPayments.filter((p) => {
-    if (groupFilter === 'OTRO' ? !!p.studentId : groupFilter && p.groupId !== groupFilter) return false;
-    if (methodFilter && p.method !== methodFilter) return false;
+    if (groupFilter.length) {
+      const match = groupFilter.some((f) => (f === 'OTRO' ? !p.studentId : p.groupId === f));
+      if (!match) return false;
+    }
+    if (methodFilter.length && !methodFilter.includes(p.method)) return false;
     return matchesSearch(
       search,
       p.student?.fullName,
@@ -148,12 +151,12 @@ export function PaymentsPage() {
     );
   });
 
-  const filtersActive = !!(search || groupFilter || methodFilter || from || to);
+  const filtersActive = !!(search || groupFilter.length || methodFilter.length || from || to);
 
   function clearFilters() {
     setSearch('');
-    setGroupFilter('');
-    setMethodFilter('');
+    setGroupFilter([]);
+    setMethodFilter([]);
     setFrom('');
     setTo('');
   }
@@ -458,19 +461,21 @@ export function PaymentsPage() {
             onChange={setSearch}
             placeholder="Buscar por estudiante, concepto u observación"
           />
-          <Select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
-            <option value="">Todos los grupos</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-            <option value="OTRO">Otros ingresos</option>
-          </Select>
-          <Select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)}>
-            <option value="">Todos los métodos</option>
-            {PAYMENT_METHODS.map((m) => (
-              <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m]}</option>
-            ))}
-          </Select>
+          <MultiSelect
+            values={groupFilter}
+            onChange={setGroupFilter}
+            placeholder="Todos los grupos"
+            options={[
+              ...groups.map((g) => ({ value: g.id, label: g.name })),
+              { value: 'OTRO', label: 'Otros ingresos' },
+            ]}
+          />
+          <MultiSelect
+            values={methodFilter}
+            onChange={setMethodFilter}
+            placeholder="Todos los métodos"
+            options={PAYMENT_METHODS.map((m) => ({ value: m, label: PAYMENT_METHOD_LABELS[m] }))}
+          />
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Desde">
